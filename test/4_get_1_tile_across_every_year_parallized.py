@@ -7,6 +7,9 @@ import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import threading
 from typing import List, Tuple
+import time
+import random
+from functools import wraps
 
 # ================================
 # CONFIG
@@ -19,6 +22,49 @@ EXPORT_SCALE = 30
 TILE_SCALE_METERS = 50000
 DEBUG_ONE_TILE = True
 MAX_WORKERS = 4  # Number of parallel download threads
+
+# Retry configuration
+MAX_RETRIES = float('inf')  # Never stop retrying
+BASE_DELAY = 1  # Base delay in seconds
+MAX_DELAY = 300  # Maximum delay in seconds (5 minutes)
+BACKOFF_MULTIPLIER = 2  # Exponential backoff multiplier
+
+# ================================
+# EXPONENTIAL BACKOFF RETRY DECORATOR
+# ================================
+def retry_with_exponential_backoff(max_retries=MAX_RETRIES, base_delay=BASE_DELAY, 
+                                 max_delay=MAX_DELAY, backoff_multiplier=BACKOFF_MULTIPLIER):
+    """
+    Decorator that implements exponential backoff retry logic.
+    Will retry indefinitely until success.
+    """
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            attempt = 0
+            delay = base_delay
+            
+            while True:
+                try:
+                    return func(*args, **kwargs)
+                except Exception as e:
+                    attempt += 1
+                    
+                    # Calculate delay with jitter to avoid thundering herd
+                    jitter = random.uniform(0, 1)
+                    actual_delay = min(delay + jitter, max_delay)
+                    
+                    thread_safe_print(f"Attempt {attempt} failed for {func.__name__}: {e}")
+                    thread_safe_print(f"Retrying in {actual_delay:.2f} seconds...")
+                    
+                    time.sleep(actual_delay)
+                    
+                    # Exponential backoff: increase delay for next attempt
+                    delay = min(delay * backoff_multiplier, max_delay)
+                    
+            return None  # This should never be reached
+        return wrapper
+    return decorator
 
 # ================================
 # AUTHENTICATE
@@ -74,55 +120,66 @@ def thread_safe_print(*args, **kwargs):
 # ================================
 # DOWNLOAD FUNCTION
 # ================================
+@retry_with_exponential_backoff()
+def download_tile_with_retry(img, geom, out_file, scale=EXPORT_SCALE):
+    """Download tile with automatic retry on failure"""
+    url = img.getDownloadURL({
+        "scale": scale,
+        "crs": "EPSG:4326",
+        "region": geom.bounds().getInfo()  # use bounding box for stability
+    })
+    thread_safe_print(f"Downloading {out_file} ...")
+    response = requests.get(url)
+    if response.status_code != 200:
+        raise Exception(f"HTTP {response.status_code}: {response.text[:200]}")
+    
+    z = zipfile.ZipFile(io.BytesIO(response.content))
+    for fname in z.namelist():
+        if fname.endswith(".tif"):
+            z.extract(fname, OUTPUT_DIR)
+            os.rename(os.path.join(OUTPUT_DIR, fname), out_file)
+    thread_safe_print(f"Saved {out_file}")
+    return True
+
 def download_tile(img, geom, out_file, scale=EXPORT_SCALE):
+    """Wrapper function that calls the retry-enabled download function"""
     try:
-        url = img.getDownloadURL({
-            "scale": scale,
-            "crs": "EPSG:4326",
-            "region": geom.bounds().getInfo()  # use bounding box for stability
-        })
-        thread_safe_print(f"Downloading {out_file} ...")
-        response = requests.get(url)
-        if response.status_code != 200:
-            thread_safe_print(f"Failed for {out_file}: {response.text[:200]}")
-            return False
-        z = zipfile.ZipFile(io.BytesIO(response.content))
-        for fname in z.namelist():
-            if fname.endswith(".tif"):
-                z.extract(fname, OUTPUT_DIR)
-                os.rename(os.path.join(OUTPUT_DIR, fname), out_file)
-        thread_safe_print(f"Saved {out_file}")
-        return True
+        return download_tile_with_retry(img, geom, out_file, scale)
     except Exception as e:
-        thread_safe_print(f"Error for {out_file}: {e}")
+        thread_safe_print(f"Final error for {out_file}: {e}")
         return False
 
 # ================================
 # PROCESS SINGLE YEAR
 # ================================
+@retry_with_exponential_backoff()
+def process_year_with_retry(year: int, all_landsat, geom) -> Tuple[int, bool]:
+    """Process a single year with automatic retry on failure"""
+    thread_safe_print(f"Processing {year}...")
+    dataset = all_landsat.filterBounds(geom) \
+                         .filterDate(f"{year}-01-01", f"{year}-12-31") \
+                         .map(add_ndwi)
+
+    if dataset.size().getInfo() == 0:
+        thread_safe_print(f"No data for {year}, skipping...")
+        return (year, False)
+
+    ndwi_median = dataset.select("NDWI").median().clip(geom)
+
+    out_file = os.path.join(OUTPUT_DIR, f"tile_{year}.tif")
+    if os.path.exists(out_file):
+        thread_safe_print(f"Already exists: {out_file}")
+        return (year, True)
+
+    success = download_tile(ndwi_median, geom, out_file)
+    return (year, success)
+
 def process_year(year: int, all_landsat, geom) -> Tuple[int, bool]:
     """Process a single year and return (year, success)"""
     try:
-        thread_safe_print(f"Processing {year}...")
-        dataset = all_landsat.filterBounds(geom) \
-                             .filterDate(f"{year}-01-01", f"{year}-12-31") \
-                             .map(add_ndwi)
-
-        if dataset.size().getInfo() == 0:
-            thread_safe_print(f"No data for {year}, skipping...")
-            return (year, False)
-
-        ndwi_median = dataset.select("NDWI").median().clip(geom)
-
-        out_file = os.path.join(OUTPUT_DIR, f"tile_{year}.tif")
-        if os.path.exists(out_file):
-            thread_safe_print(f"Already exists: {out_file}")
-            return (year, True)
-
-        success = download_tile(ndwi_median, geom, out_file)
-        return (year, success)
+        return process_year_with_retry(year, all_landsat, geom)
     except Exception as e:
-        thread_safe_print(f"Error processing {year}: {e}")
+        thread_safe_print(f"Final error processing {year}: {e}")
         return (year, False)
 
 # ================================
