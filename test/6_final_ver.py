@@ -241,7 +241,7 @@ landsat9 = ee.ImageCollection("LANDSAT/LC09/C02/T1_L2")
 all_landsat = landsat5.merge(landsat7).merge(landsat8).merge(landsat9)
 
 # Create Sentinel collection once
-all_sentinel = ee.ImageCollection("COPERNICUS/S2_SR")
+all_sentinel = ee.ImageCollection("COPERNICUS/S2_SR_HARMONIZED")
 
 # ================================
 # MAIN LOOP
