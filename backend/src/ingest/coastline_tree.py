@@ -11,7 +11,7 @@ class CoastlineTreeNode():
     in time.
     """
 
-    def __init__(self, segments: Dict[int, Union[LineString, MultiLineString]]):
+    def __init__(self, segments: Dict[int, LineString]):
         # Each node should have 4 children, so split segments
         # into groups or dub this node a leaf node
         child_groups = []
@@ -21,7 +21,7 @@ class CoastlineTreeNode():
             
             # Distribute segments among children
             for segment_id, geometry in segments.items():
-                group_index = math.floor(children_added / children_per_group)
+                group_index = min(math.floor(children_added / children_per_group), 3)
 
                 if len(child_groups) == group_index:
                     # Add list if DNE

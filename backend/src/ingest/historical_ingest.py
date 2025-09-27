@@ -8,7 +8,7 @@ from shapely.geometry.multilinestring import MultiLineString
 from coastline_tree import CoastlineTreeNode
 import matplotlib.pyplot as plt
 
-def ingest_historical_data(dir: str = 'data/historical') -> Dict[datetime, Dict[int, Union[LineString, MultiLineString]]]:
+def ingest_historical_data(dir: str = 'data/historical') -> Dict[datetime, Dict[int, LineString]]:
     """
     Given a directory of `.gpkg` files produced by the ETL pipeline,
     retuns a dictionary of timestamp to a dictionary of segment ID 
@@ -55,4 +55,7 @@ for timestamp, coastline in data.items():
         gpd.GeoSeries([root_geometry], crs="EPSG:4326").plot()
         plt.show()
         node = node.children[0]
+    root_geometry = node.coastline.geometry
+    gpd.GeoSeries([root_geometry], crs="EPSG:4326").plot()
+    plt.show()
     break
