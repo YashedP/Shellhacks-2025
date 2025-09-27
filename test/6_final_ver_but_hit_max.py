@@ -120,7 +120,7 @@ def get_tile_filename(geom, year):
     return os.path.join(OUTPUT_DIR, f"{lat}_{lon}_{year}.tif")
 
 def log_failed_tile(geom, year, error_msg):
-    centroid = geom.centroid().coordinates().getInfo()
+    centroid = geom.centroid(maxError=1).coordinates().getInfo()
     lon = round(centroid[0], 5)
     lat = round(centroid[1], 5)
     
