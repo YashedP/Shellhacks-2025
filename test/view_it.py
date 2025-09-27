@@ -8,6 +8,8 @@ with rasterio.open(tif_path) as src:
     print("CRS:", src.crs)
     print("Bounds:", src.bounds)
     print("Resolution:", src.res)
+    
+    print(f"Insert these two numbers into google maps to get the location of the tile: {src.bounds.left}, {src.bounds}")
 
 # Apply water mask (NDWI > 0)
 water_mask = ndwi > 0
