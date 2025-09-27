@@ -1,7 +1,7 @@
 import rasterio
 import matplotlib.pyplot as plt
 
-tif_path = "florida_tiles/tile_test/download.NDWI.tif"
+tif_path = "florida_tiles/tile_1984.tif"
 
 with rasterio.open(tif_path) as src:
     ndwi = src.read(1)

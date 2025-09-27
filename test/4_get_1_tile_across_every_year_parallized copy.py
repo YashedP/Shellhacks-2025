@@ -16,6 +16,7 @@ KEY_FILE = "gcp_key.json"
 PROJECT = "striped-orbit-473405-h0"
 OUTPUT_DIR = "florida_tiles"
 EXPORT_SCALE = 30
+TILE_SCALE_METERS = 50000
 DEBUG_ONE_TILE = True
 MAX_WORKERS = 4  # Number of parallel download threads
 
@@ -41,7 +42,7 @@ def add_ndwi(image):
 # ================================
 # GRID CREATION
 # ================================
-def make_grid(region, scale=50000):
+def make_grid(region, scale=TILE_SCALE_METERS):
     lonlat = ee.Image.pixelLonLat()
     lon = lonlat.select("longitude").divide(scale).floor()
     lat = lonlat.select("latitude").divide(scale).floor()
@@ -56,7 +57,7 @@ def make_grid(region, scale=50000):
     )
     return grid
 
-tiles = make_grid(florida.geometry(), 50000)
+tiles = make_grid(florida.geometry(), TILE_SCALE_METERS)
 tile_list = tiles.toList(tiles.size())
 
 print("Number of tiles:", tiles.size().getInfo())
