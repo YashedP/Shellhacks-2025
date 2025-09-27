@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fragmented Sea Level Rising Prediction</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🌊 Fragmented Sea Level Rising Prediction</h1>
+            <p>Interactive visualization of historical and predicted sea level data</p>
+        </header>
+
+        <div class="controls-panel">
+            <div class="time-controls">
+                <label for="year-slider">Year: <span id="current-year">2024</span></label>
+                <input type="range" id="year-slider" min="1950" max="2100" value="2024" class="slider">
+                <div class="year-labels">
+                    <span>1950</span>
+                    <span>2100</span>
+                </div>
+            </div>
+            
+            <div class="data-info">
+                <div class="info-item">
+                    <span class="label">Data Type:</span>
+                    <span id="data-type" class="value">Historical</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Data Points:</span>
+                    <span id="data-count" class="value">0</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">View Area:</span>
+                    <span id="view-area" class="value">Global</span>
+                </div>
+            </div>
+
+            <div class="map-controls">
+                <button id="reset-zoom" class="btn">Reset View</button>
+                <button id="toggle-contours" class="btn active">Show Contours</button>
+                <button id="toggle-points" class="btn">Show Points</button>
+            </div>
+        </div>
+
+        <div class="map-container">
+            <div id="map"></div>
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Loading data...</p>
+            </div>
+        </div>
+
+        <div class="legend">
+            <h3>Sea Level Legend</h3>
+            <div class="legend-items">
+                <div class="legend-item">
+                    <div class="color-box" style="background-color: green;"></div>
+                    <span>0 - 0.5m</span>
+                </div>
+                <div class="legend-item">
+                    <div class="color-box" style="background-color: yellow;"></div>
+                    <span>0.5 - 1.0m</span>
+                </div>
+                <div class="legend-item">
+                    <div class="color-box" style="background-color: orange;"></div>
+                    <span>1.0 - 1.5m</span>
+                </div>
+                <div class="legend-item">
+                    <div class="color-box" style="background-color: red;"></div>
+                    <span>1.5 - 2.0m</span>
+                </div>
+                <div class="legend-item">
+                    <div class="color-box" style="background-color: darkred;"></div>
+                    <span>2.0m+</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let map;
+        let currentYear = 2024;
+        let currentBounds = null;
+        let contourLayers = [];
+        let pointLayers = [];
+        let showContours = true;
+        let showPoints = false;
+
+        // Initialize map
+        function initMap() {
+            console.log('Initializing map...');
+            
+            try {
+                map = L.map('map').setView([37.7749, -122.4194], 6);
+                console.log('Map created successfully');
+                
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors'
+                }).addTo(map);
+                console.log('Tile layer added');
+
+                // Listen for map move events to update bounds
+                map.on('moveend', function() {
+                    updateBounds();
+                });
+
+                // Hide loading indicator
+                showLoading(false);
+                console.log('Map initialization complete');
+
+                // Load initial data
+                loadDataForYear(currentYear);
+            } catch (error) {
+                console.error('Error initializing map:', error);
+                showLoading(false);
+            }
+        }
+
+        // Update bounds when map view changes
+        function updateBounds() {
+            const bounds = map.getBounds();
+            currentBounds = [
+                bounds.getSouth(), // min latitude
+                bounds.getWest(), // min longitude
+                bounds.getNorth(), // max latitude
+                bounds.getEast() // max longitude
+            ];
+            
+            // Update view area display
+            const area = calculateArea(currentBounds);
+            document.getElementById('view-area').textContent = 
+                area > 1000000 ? 'Global' : 
+                area > 100000 ? 'Regional' : 'Local';
+            
+            // Reload data with new bounds
+            loadDataForYear(currentYear);
+        }
+
+        // Calculate approximate area of current view
+        function calculateArea(bounds) {
+            const [minLat, minLon, maxLat, maxLon] = bounds;
+            const latDiff = maxLat - minLat;
+            const lonDiff = maxLon - minLon;
+            return latDiff * lonDiff;
+        }
+
+        // Load data for specific year
+        function loadDataForYear(year) {
+            console.log('Loading data for year:', year);
+            showLoading(true);
+            
+            const boundsParam = currentBounds ? currentBounds.join(',') : '';
+            const url = `/api/data/${year}?bounds=${boundsParam}`;
+            console.log('Fetching URL:', url);
+            
+            fetch(url)
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Data received:', data);
+                    displayData(data);
+                    updateUI(data);
+                    showLoading(false);
+                })
+                .catch(error => {
+                    console.error('Error loading data:', error);
+                    showLoading(false);
+                });
+        }
+
+        // Display data on map
+        function displayData(data) {
+            // Clear existing layers
+            clearLayers();
+            
+            if (data.contours && showContours) {
+                displayContours(data.contours);
+            }
+            
+            if (data.points && showPoints) {
+                displayPoints(data.points);
+            }
+        }
+
+        // Display contour lines
+        function displayContours(contours) {
+            contours.forEach(contour => {
+                if (contour.points.length > 1) {
+                    const polyline = L.polyline(contour.points, {
+                        color: contour.color,
+                        weight: 2,
+                        opacity: 0.7
+                    }).addTo(map);
+                    
+                    polyline.bindPopup(`Sea Level: ${contour.level}`);
+                    contourLayers.push(polyline);
+                }
+            });
+        }
+
+        // Display individual points
+        function displayPoints(points) {
+            points.forEach(point => {
+                const marker = L.circleMarker([point.lat, point.lon], {
+                    radius: 3,
+                    fillColor: getPointColor(point.sea_level),
+                    color: '#000',
+                    weight: 1,
+                    opacity: 1,
+                    fillOpacity: 0.7
+                }).addTo(map);
+                
+                marker.bindPopup(`Sea Level: ${point.sea_level}m`);
+                pointLayers.push(marker);
+            });
+        }
+
+        // Get color for point based on sea level
+        function getPointColor(level) {
+            if (level < 0.5) return 'green';
+            if (level < 1.0) return 'yellow';
+            if (level < 1.5) return 'orange';
+            if (level < 2.0) return 'red';
+            return 'darkred';
+        }
+
+        // Clear all layers
+        function clearLayers() {
+            contourLayers.forEach(layer => map.removeLayer(layer));
+            pointLayers.forEach(layer => map.removeLayer(layer));
+            contourLayers = [];
+            pointLayers = [];
+        }
+
+        // Update UI elements
+        function updateUI(data) {
+            document.getElementById('current-year').textContent = currentYear;
+            document.getElementById('data-count').textContent = data.points ? data.points.length : 0;
+            document.getElementById('data-type').textContent = 
+                data.data_type === 'historical' ? 'Historical' : 'Predicted';
+        }
+
+        // Show/hide loading indicator
+        function showLoading(show) {
+            const loading = document.getElementById('loading');
+            loading.style.display = show ? 'flex' : 'none';
+        }
+
+        // Event listeners
+        document.getElementById('year-slider').addEventListener('input', function(e) {
+            currentYear = parseInt(e.target.value);
+            loadDataForYear(currentYear);
+        });
+
+        document.getElementById('reset-zoom').addEventListener('click', function() {
+            map.setView([37.7749, -122.4194], 6);
+            currentBounds = null;
+            loadDataForYear(currentYear);
+        });
+
+        document.getElementById('toggle-contours').addEventListener('click', function() {
+            showContours = !showContours;
+            this.classList.toggle('active');
+            displayData({contours: contourLayers, points: pointLayers});
+        });
+
+        document.getElementById('toggle-points').addEventListener('click', function() {
+            showPoints = !showPoints;
+            this.classList.toggle('active');
+            displayData({contours: contourLayers, points: pointLayers});
+        });
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initMap();
+        });
+    </script>
+</body>
+</html>
