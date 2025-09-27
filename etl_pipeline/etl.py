@@ -17,7 +17,9 @@ import numpy as np
 import pandas as pd
 import requests
 from shapely.ops import unary_union
+from shapely.geometry import Point, LineString
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 
 # ----- CONFIG -----
 
@@ -25,7 +27,7 @@ kmz_url = "https://cmgds.marine.usgs.gov/data-releases/media/2022/10.5066-P9BQQT
 kmz_name = "SatelliteDerivedShorelines_FL.kmz"
 kml_name = "CoastSat_shorelines_FL.kml"
 shp_dir = "CoastSat_shorelines_FL"
-segment_height = 0.01
+segment_height = 0.02
 output_dir = "segment_gdfs"
 
 # ----- LOGIC -----
@@ -133,13 +135,71 @@ gdf["Segment"] = gdf["geometry"].apply(assign_segment)
 
 print(len(gdf["Segment"].unique()), "segments defined!")
 
-# Forward fill missing segments
-print("Forward filling missing segments...")
-
 # Combine geometries per Date + Segment
 gdf_agg = gdf.groupby(["Date", "Segment"], as_index=False).agg(
     {"geometry": lambda x: unary_union(x)}
 )
+
+# We've run into a lot of issues with MultiLineStrings in the backend
+# Let's connect all MultiLineStrings into SingleLineStrings
+def connect_multilinestring_by_latitude(geom):
+    """
+    If a geometry is a MultiLineString, connects its component LineStrings
+    from north to south to form a single LineString. It connects the south
+    end of the northern line to the north end of the southern line.
+    """
+    # If it's not a MultiLineString or is empty, return it as-is.
+    if geom.geom_type != 'MultiLineString' or geom.is_empty:
+        return geom
+
+    lines = [line for line in geom.geoms if not line.is_empty and len(line.coords) > 1]
+
+    # Handle simple cases
+    if not lines:
+        return None
+    if len(lines) == 1:
+        return lines[0]
+
+    # 1. Calculate the average latitude for each line
+    lines_with_lat = []
+    for line in lines:
+        avg_lat = np.mean([pt[1] for pt in line.coords])
+        lines_with_lat.append((avg_lat, line))
+
+    # 2. Sort lines from north to south (descending latitude)
+    lines_with_lat.sort(key=lambda x: x[0], reverse=True)
+    sorted_lines = [line for lat, line in lines_with_lat]
+
+    # 3. Iteratively connect the lines using the new logic
+    connected_line = sorted_lines[0]
+    for line_to_add in sorted_lines[1:]:
+        coords1 = list(connected_line.coords)
+        coords2 = list(line_to_add.coords)
+
+        # Orient the current line (coords1) so its southernmost point is at the end.
+        # If the starting point's latitude is less than the ending point's, it's the southern point.
+        if coords1[0][1] < coords1[-1][1]:
+            coords1.reverse() # Reverse so the southern point is the last element
+
+        # Orient the next line (coords2) so its northernmost point is at the beginning.
+        # If the ending point's latitude is greater than the starting point's, it's the northern point.
+        if coords2[-1][1] > coords2[0][1]:
+            coords2.reverse() # Reverse so the northern point is the first element
+
+        # Combine the coordinate lists and create the new, longer LineString
+        connected_line = LineString(coords1 + coords2)
+        
+    return connected_line
+
+# Apply the function
+print("Connecting MultiLineString geometries...")
+tqdm.pandas(desc="Connecting lines")
+gdf_agg['geometry'] = gdf_agg['geometry'].progress_apply(connect_multilinestring_by_latitude)
+
+# Drop any rows with empty geometries after processing
+gdf_agg.dropna(subset=['geometry'], inplace=True)
+
+print("Forward filling...")
 
 # Now pivot will work
 pivot_gdf = gdf_agg.pivot(index="Date", columns="Segment", values="geometry")
