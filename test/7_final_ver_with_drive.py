@@ -26,7 +26,7 @@ DRIVE_FOLDER = "EarthEngineTiles"
 # ================================
 credentials = ee.ServiceAccountCredentials(SERVICE_ACCOUNT, KEY_FILE)
 ee.Authenticate()
-ee.Initialize()
+ee.Initialize(project=PROJECT)
 # ee.Initialize(credentials, project=PROJECT)
 
 # ================================
@@ -175,5 +175,14 @@ if DEBUG_ONE_TILE:
     current_year = datetime.datetime.now().year
     for year in range(start_year, current_year + 1):
         process_year(year, geom)
+    # Process ALL tiles
+    num_tiles = tiles.size().getInfo()
+    print(f"Processing {num_tiles} tiles...")
+
+    for i in range(num_tiles):
+        tile = ee.Feature(tile_list.get(i))
+        geom = tile.geometry()
+        for year in range(start_year, current_year + 1):
+            process_year(year, geom)
 
 print("All export tasks submitted. Go to https://code.earthengine.google.com/tasks to monitor.")
