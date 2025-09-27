@@ -13,16 +13,16 @@ KEY_FILE = "gcp_key.json"
 PROJECT = "striped-orbit-473405-h0"
 OUTPUT_DIR = "florida_tiles"
 EXPORT_SCALE = 30
-DEBUG_ONE_TILE = True   # we only do tile[0] but for all years
+DEBUG_ONE_TILE = True
 
 # ================================
-# AUTH
+# AUTHENTICATE
 # ================================
 credentials = ee.ServiceAccountCredentials(SERVICE_ACCOUNT, KEY_FILE)
 ee.Initialize(credentials, project=PROJECT)
 
 # ================================
-# REGION
+# LOAD FLORIDA BOUNDARY
 # ================================
 florida = ee.FeatureCollection("TIGER/2018/States") \
              .filter(ee.Filter.eq("STUSPS", "FL"))
@@ -41,6 +41,7 @@ def make_grid(region, scale=50000):
     lonlat = ee.Image.pixelLonLat()
     lon = lonlat.select("longitude").divide(scale).floor()
     lat = lonlat.select("latitude").divide(scale).floor()
+    # Combine lon/lat into one band
     grid_id = lon.multiply(100000).add(lat).toInt()
     grid = grid_id.reduceToVectors(
         geometry=region,
@@ -53,6 +54,7 @@ def make_grid(region, scale=50000):
 
 tiles = make_grid(florida.geometry(), 50000)
 tile_list = tiles.toList(tiles.size())
+
 print("Number of tiles:", tiles.size().getInfo())
 
 # ================================
@@ -80,7 +82,7 @@ def download_tile(img, geom, out_file, scale=EXPORT_SCALE):
         print(f"Error for {out_file}: {e}")
 
 # ================================
-# MAIN LOOP (one tile, all years)
+# MAIN LOOP
 # ================================
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 

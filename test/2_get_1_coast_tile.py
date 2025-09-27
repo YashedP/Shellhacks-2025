@@ -40,7 +40,7 @@ landsat = dataset.map(add_ndwi)
 ndwi_median = landsat.select("NDWI").median().clip(florida)
 
 # ================================
-# CREATE TILES (GRID OVER FLORIDA)
+# GRID CREATION
 # ================================
 def make_grid(region, scale=TILE_SCALE_METERS):
     lonlat = ee.Image.pixelLonLat()
