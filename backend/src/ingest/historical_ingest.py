@@ -47,20 +47,3 @@ def ingest_historical_data(dir: str = '../../data/historical') -> Dict[int, Tupl
         segments[segment_id] = (sorted_timestamps, data_dict)
 
     return segments
-
-# Get average number of vertices in geometry
-segments = ingest_historical_data()
-
-avg_length = []
-
-for segment in segments:
-    dictionary = segments[segment][1]
-    for key, value in dictionary.items():
-        if value.geom_type == 'LineString':
-            avg_length.append(len(value.coords))
-        elif value.geom_type == 'MultiLineString':
-            avg_length.append(sum(len(line.coords) for line in value.geoms))
-        else:
-            print('UHOH')
-
-print(sum(avg_length) / len(avg_length))
