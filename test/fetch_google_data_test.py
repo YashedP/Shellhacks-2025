@@ -11,5 +11,4 @@ ee.Initialize(credentials, project=PROJECT)
 
 # quick test: load Florida boundary and print a count
 florida = ee.FeatureCollection("TIGER/2018/States").filter(ee.Filter.eq('STUSPS', 'FL'))
-print('Florida feature count:', florida.size().getInfo())
-
+print('does api work', "yes" if 1 == florida.size().getInfo() else "no")
