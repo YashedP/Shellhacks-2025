@@ -4,17 +4,14 @@ import zipfile
 import io
 import os
 
-# ================================
-# CONFIGURATION
-# ================================
 SERVICE_ACCOUNT = "shellhacks@striped-orbit-473405-h0.iam.gserviceaccount.com"
-KEY_FILE = "gcp_key.json"   # path to your downloaded JSON key
+KEY_FILE = "gcp_key.json"
 PROJECT = "striped-orbit-473405-h0"
 OUTPUT_DIR = "florida_tiles"
-TILE_SCALE_METERS = 50000   # tile size in meters (~50 km)
-EXPORT_SCALE = 30           # output resolution in meters
+TILE_SCALE_METERS = 50000
+EXPORT_SCALE = 30
 
-DEBUG_ONE_TILE = True       # ⚡ flip this to False for full run
+DEBUG_ONE_TILE = True
 
 # ================================
 # AUTHENTICATE
@@ -105,4 +102,4 @@ else:
         os.makedirs(out_folder, exist_ok=True)
         download_tile(ndwi_median, geom, out_folder)
 
-print("✅ Done!")
+print("Done!")
