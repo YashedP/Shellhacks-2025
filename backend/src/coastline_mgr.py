@@ -1,0 +1,1 @@
+# Avg # of coordinates to consist a segment: 40.71296821575873

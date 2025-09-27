@@ -1,25 +1,24 @@
 import os
 import geopandas as gpd
 from tqdm import tqdm
-from typing import Dict, Tuple, List
+from typing import Dict, Union
 from datetime import datetime
-from shapely.geometry.base import BaseGeometry
+from shapely.geometry.linestring import LineString
+from shapely.geometry.multilinestring import MultiLineString
+from coastline_tree import CoastlineTreeNode
+import matplotlib.pyplot as plt
 
-def ingest_historical_data(dir: str = '../../data/historical') -> Dict[int, Tuple[List[datetime], Dict[datetime, BaseGeometry]]]:
+def ingest_historical_data(dir: str = 'data/historical') -> Dict[datetime, Dict[int, Union[LineString, MultiLineString]]]:
     """
     Given a directory of `.gpkg` files produced by the ETL pipeline,
-    retuns a dictionary of segment ID to segments, where a segment is 
-    a tuple. The first element of the tuple is a sorted list of 
-    timestamps. The second element of the tuple is a dictionary from 
-    timestamp to geometry (the shape of that segment of the coastline 
-    at that time). The geometry may either be `LineString` or 
-    `MultiLineString`.
+    retuns a dictionary of timestamp to a dictionary of segment ID 
+    to segment.
     """
 
     """
-    {segment_id: (sorted_timestamps, {timestamp: geometry})}
+    {timestamp: {segment_id: geometry}
     """
-    segments = {}
+    coastline_over_time = {}
     gpkg_files = [f for f in os.listdir(dir)]
 
     # Process every segment
@@ -30,9 +29,6 @@ def ingest_historical_data(dir: str = '../../data/historical') -> Dict[int, Tupl
         # Drop 'Segment' column from df
         df = df.drop('Segment', axis=1)
 
-        # Drop duplicate geometries
-        df = df.drop_duplicates(subset='geometry').reset_index(drop=True)
-
         # Get dictionary from date to geometry
         data_dict = df.set_index('Date')['geometry'].to_dict()
 
@@ -40,10 +36,23 @@ def ingest_historical_data(dir: str = '../../data/historical') -> Dict[int, Tupl
         data_dict = {key.to_pydatetime(): value for key, value in data_dict.items()}
 
         # Created sorted list of keys
-        sorted_timestamps = list(data_dict.keys())
-        sorted_timestamps.sort()
+        for timestamp, geometry in data_dict.items():
+            if timestamp not in coastline_over_time:
+                # Init sub-dict
+                coastline_over_time[timestamp] = {}
 
-        # Add to segments dict
-        segments[segment_id] = (sorted_timestamps, data_dict)
+            coastline_over_time[timestamp][segment_id] = geometry
 
-    return segments
+    return coastline_over_time
+
+
+data = ingest_historical_data()
+
+for timestamp, coastline in data.items():
+    node = CoastlineTreeNode(coastline)
+    while (len(node.children) > 0):
+        root_geometry = node.coastline.geometry
+        gpd.GeoSeries([root_geometry], crs="EPSG:4326").plot()
+        plt.show()
+        node = node.children[0]
+    break
