@@ -3,11 +3,6 @@ from flask import Flask, request
 app = Flask(__name__)
 
 def get_bounding_box_params():
-    """
-    Get the latitude and longitude pairs that mark the top left corner 
-    and bottom right corner of the bounding box which is the user's 
-    viewport.
-    """
     tlCornerLat = request.args.get('tlCornerLat', default=90.0, type=float)
     tlCornerLon = request.args.get('tlCornerLon', default=-180.0, type=float)
     brCornerLat = request.args.get('brCornerLat', default=-90.0, type=float)
