@@ -111,38 +111,6 @@ def forecast(model, init_seq, steps):
     return np.array(preds)
 
 
-# def test():
-#     df = load_coastline_data(files[0])
-
-#     print(df.iloc[0].Date)
-#     print(df.iloc[0].Segment)
-#     print(df.iloc[0].geometry)
-
-#     num_coordinate_points = {}
-
-#     for i in range(len(df)):
-#         geom = df.iloc[i].geometry
-#         num_points = 0
-
-#         for j, line in enumerate(geom.geoms):
-#             num_points += len(list(line.coords))
-#             print(f"LineString {j}: {list(line.coords)} coordinate points")
-
-#         if num_points not in num_coordinate_points:
-#             num_coordinate_points[num_points] = 1
-#         else:
-#             num_coordinate_points[num_points] += 1
-
-#     print(f"dict of number of coordinate points: {num_coordinate_points}")
-
-#     import json
-
-#     with open("num_coordinate_points.json", "w") as f:
-#         json.dump(num_coordinate_points, f, indent=2)
-
-#     sys.exit()
-
-
 if __name__ == "__main__":
     # test()
     if files:
