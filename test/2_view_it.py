@@ -5,6 +5,9 @@ tif_path = "florida_tiles/tile_test/download.NDWI.tif"
 
 with rasterio.open(tif_path) as src:
     ndwi = src.read(1)
+    print("CRS:", src.crs)
+    print("Bounds:", src.bounds)
+    print("Resolution:", src.res)
 
 # Apply water mask (NDWI > 0)
 water_mask = ndwi > 0
