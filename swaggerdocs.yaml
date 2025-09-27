@@ -1,0 +1,133 @@
+openapi: 3.0.0
+info:
+  title: My API
+  version: 1.0.0
+  description: Simple API for retrieving geospatial data by coordinates and year(s).
+
+paths:
+  /instance:
+    get:
+      summary: Get a single instance for a bounding box and year
+      parameters:
+        - in: query
+          name: topLeftLat
+          required: true
+          schema:
+            type: number
+            format: float
+          description: Latitude of the top-left corner
+        - in: query
+          name: topLeftLong
+          required: true
+          schema:
+            type: number
+            format: float
+          description: Longitude of the top-left corner
+        - in: query
+          name: bottomRightLat
+          required: true
+          schema:
+            type: number
+            format: float
+          description: Latitude of the bottom-right corner
+        - in: query
+          name: bottomRightLong
+          required: true
+          schema:
+            type: number
+            format: float
+          description: Longitude of the bottom-right corner
+        - in: query
+          name: year
+          required: true
+          schema:
+            type: integer
+          description: Year of the dataset to retrieve
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  points:
+                    type: array
+                    items:
+                      type: array
+                      items:
+                        type: number
+                      minItems: 2
+                      maxItems: 2
+              example:
+                points:
+                  - [27.994402, -81.760254]
+                  - [28.123456, -81.654321]
+
+  /sequence:
+    get:
+      summary: Get a sequence of instances across a range of years
+      parameters:
+        - in: query
+          name: topLeftLat
+          required: true
+          schema:
+            type: number
+            format: float
+          description: Latitude of the top-left corner
+        - in: query
+          name: topLeftLong
+          required: true
+          schema:
+            type: number
+            format: float
+          description: Longitude of the top-left corner
+        - in: query
+          name: bottomRightLat
+          required: true
+          schema:
+            type: number
+            format: float
+          description: Latitude of the bottom-right corner
+        - in: query
+          name: bottomRightLong
+          required: true
+          schema:
+            type: number
+            format: float
+          description: Longitude of the bottom-right corner
+        - in: query
+          name: startYear
+          required: true
+          schema:
+            type: integer
+          description: Starting year of the dataset range
+        - in: query
+          name: endYear
+          required: true
+          schema:
+            type: integer
+          description: Ending year of the dataset range
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: array
+                  items:
+                    type: array
+                    items:
+                      type: number
+                    minItems: 2
+                    maxItems: 2
+              example:
+                2020:
+                  - [27.994402, -81.760254]
+                  - [28.111111, -81.555555]
+                2021:
+                  - [27.888888, -81.444444]
+                2022:
+                  - [28.222222, -81.333333]
