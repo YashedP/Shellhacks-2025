@@ -8,7 +8,7 @@ Cite as. Scala et al., 2023
 
 """
 import numpy as np 
-import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
+import pandas as pd 
 
 import os
 for dirname, _, filenames in os.walk('D:\\CNN\\'):
