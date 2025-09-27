@@ -115,7 +115,7 @@ def thread_safe_print(*args, **kwargs):
 # HELPERS
 # ================================
 def get_tile_filename(geom, year):
-    centroid = geom.centroid().coordinates().getInfo()
+    centroid = geom.centroid(maxError=1).coordinates().getInfo()
     lon = round(centroid[0], 5)
     lat = round(centroid[1], 5)
     return os.path.join(OUTPUT_DIR, f"{lat}_{lon}_{year}.tif")
@@ -172,16 +172,13 @@ def process_year(year: int, geom) -> Tuple[int, bool]:
         thread_safe_print(f"Processing {year}...")
 
         if year < 2015:
-            dataset = (ee.ImageCollection("LANDSAT/LT05/C02/T1_L2")
-                        .merge(ee.ImageCollection("LANDSAT/LE07/C02/T1_L2"))
-                        .merge(ee.ImageCollection("LANDSAT/LC08/C02/T1_L2"))
-                        .merge(ee.ImageCollection("LANDSAT/LC09/C02/T1_L2"))
+            dataset = (all_landsat
                         .filterBounds(geom)
                         .filterDate(f"{year}-01-01", f"{year}-12-31")
                         .map(add_ndwi_landsat))
             scale = 30
         else:
-            dataset = (ee.ImageCollection("COPERNICUS/S2_SR")
+            dataset = (all_sentinel
                         .filterBounds(geom)
                         .filterDate(f"{year}-01-01", f"{year}-12-31")
                         .map(add_ndwi_sentinel))
@@ -232,6 +229,19 @@ def process_years_parallel(geom, start_year: int, end_year: int):
             thread_safe_print(f"Progress: {completed}/{len(years_to_process)} years done")
 
     thread_safe_print(f"Complete! {completed - failed} successful, {failed} failed")
+
+# ================================
+# CREATE COLLECTIONS ONCE
+# ================================
+# Create merged Landsat collection once
+landsat5 = ee.ImageCollection("LANDSAT/LT05/C02/T1_L2")
+landsat7 = ee.ImageCollection("LANDSAT/LE07/C02/T1_L2")
+landsat8 = ee.ImageCollection("LANDSAT/LC08/C02/T1_L2")
+landsat9 = ee.ImageCollection("LANDSAT/LC09/C02/T1_L2")
+all_landsat = landsat5.merge(landsat7).merge(landsat8).merge(landsat9)
+
+# Create Sentinel collection once
+all_sentinel = ee.ImageCollection("COPERNICUS/S2_SR")
 
 # ================================
 # MAIN LOOP
