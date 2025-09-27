@@ -17,89 +17,27 @@ def load_data():
     """Load historical and predicted data from CSV files"""
     global historical_data, predicted_data
     
-    # Load historical data (1950-2024)
+    # Load historical data (1950-2024) from web/data folder
     if os.path.exists('data/historical_data.csv'):
         historical_data = pd.read_csv('data/historical_data.csv')
         historical_data['timestamp'] = pd.to_datetime(historical_data['timestamp'])
         print(f"Loaded historical data: {len(historical_data)} records")
         print(f"Historical data columns: {list(historical_data.columns)}")
     else:
-        # Generate sample historical data if file doesn't exist
-        historical_data = generate_sample_historical_data()
-        print("Generated sample historical data")
+        print("ERROR: No historical data file found at data/historical_data.csv")
+        historical_data = pd.DataFrame()
     
-    # Load predicted data (2025-2100)
+    # Load predicted data (2025-2100) from web/data folder
     if os.path.exists('data/predicted_data.csv'):
         predicted_data = pd.read_csv('data/predicted_data.csv')
         predicted_data['timestamp'] = pd.to_datetime(predicted_data['timestamp'])
         print(f"Loaded predicted data: {len(predicted_data)} records")
         print(f"Predicted data columns: {list(predicted_data.columns)}")
     else:
-        # Generate sample predicted data if file doesn't exist
-        predicted_data = generate_sample_predicted_data()
-        print("Generated sample predicted data")
+        print("ERROR: No predicted data file found at data/predicted_data.csv")
+        predicted_data = pd.DataFrame()
 
-def generate_sample_historical_data():
-    """Generate sample historical data for demonstration"""
-    np.random.seed(42)
-    
-    # Create sample GPS coordinates (focusing on coastal areas)
-    lats = np.random.uniform(25, 50, 1000)  # US East Coast range
-    lons = np.random.uniform(-85, -65, 1000)  # US East Coast range
-    
-    # Generate timestamps from 1950 to 2024
-    start_date = datetime(1950, 1, 1)
-    end_date = datetime(2024, 12, 31)
-    timestamps = pd.date_range(start_date, end_date, freq='Y')
-    
-    data = []
-    for lat, lon in zip(lats, lons):
-        for timestamp in timestamps:
-            # Simulate sea level rise over time with some noise
-            years_from_start = (timestamp.year - 1950)
-            base_level = 0.5 + (years_from_start * 0.002)  # 2mm per year rise
-            noise = np.random.normal(0, 0.1)
-            sea_level = base_level + noise
-            
-            data.append({
-                'lat': lat,
-                'lon': lon,
-                'timestamp': timestamp,
-                'sea_level': round(sea_level, 3)
-            })
-    
-    return pd.DataFrame(data)
-
-def generate_sample_predicted_data():
-    """Generate sample predicted data for demonstration"""
-    np.random.seed(42)
-    
-    # Use same coordinates as historical data
-    lats = np.random.uniform(25, 50, 1000)
-    lons = np.random.uniform(-85, -65, 1000)
-    
-    # Generate timestamps from 2025 to 2100
-    start_date = datetime(2025, 1, 1)
-    end_date = datetime(2100, 12, 31)
-    timestamps = pd.date_range(start_date, end_date, freq='Y')
-    
-    data = []
-    for lat, lon in zip(lats, lons):
-        for timestamp in timestamps:
-            # Simulate accelerated sea level rise for predictions
-            years_from_2025 = (timestamp.year - 2025)
-            base_level = 0.5 + (75 * 0.002) + (years_from_2025 * 0.005)  # Accelerated rise
-            noise = np.random.normal(0, 0.15)
-            sea_level = base_level + noise
-            
-            data.append({
-                'lat': lat,
-                'lon': lon,
-                'timestamp': timestamp,
-                'sea_level': round(sea_level, 3)
-            })
-    
-    return pd.DataFrame(data)
+# Data generation functions removed - using only uploaded data files
 
 def get_data_for_bounds(bounds, year):
     """Get data points within specified bounds for a given year"""
@@ -233,19 +171,13 @@ def get_initial_data():
     })
 
 if __name__ == '__main__':
-    # Create data directory if it doesn't exist
-    os.makedirs('data', exist_ok=True)
-    
-    # Load data
+    # Load data from uploaded files only
     load_data()
     
-    # Save sample data to CSV files
-    if not os.path.exists('data/historical_data.csv'):
-        historical_data.to_csv('data/historical_data.csv', index=False)
-        print("Generated sample historical data")
-    
-    if not os.path.exists('data/predicted_data.csv'):
-        predicted_data.to_csv('data/predicted_data.csv', index=False)
-        print("Generated sample predicted data")
+    # Check if data was loaded successfully
+    if historical_data.empty:
+        print("WARNING: No historical data loaded!")
+    if predicted_data.empty:
+        print("WARNING: No predicted data loaded!")
     
     app.run(debug=True, host='0.0.0.0', port=5000)
