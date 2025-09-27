@@ -168,6 +168,9 @@ all_sentinel = ee.ImageCollection("COPERNICUS/S2_SR_HARMONIZED")
 # ================================
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
+start_year = 1984
+current_year = datetime.datetime.now().year
+
 if DEBUG_ONE_TILE:
     tile = ee.Feature(tile_list.get(0))
     geom = tile.geometry()
@@ -175,6 +178,7 @@ if DEBUG_ONE_TILE:
     current_year = datetime.datetime.now().year
     for year in range(start_year, current_year + 1):
         process_year(year, geom)
+else:
     # Process ALL tiles
     num_tiles = tiles.size().getInfo()
     print(f"Processing {num_tiles} tiles...")
