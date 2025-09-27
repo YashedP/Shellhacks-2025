@@ -1,10 +1,9 @@
 import gc
 import os
 import sys
-from typing import List, Tuple
+from typing import Tuple
 
 import geopandas as gpd
-import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn as nn
@@ -15,8 +14,9 @@ INPUT_DIM = 2  # Only lon, lat - no need for constant Z
 HIDDEN_DIM = 64
 NUM_LAYERS = 2
 OUTPUT_DIM = 2  # Only predict lon, lat
+# SEQUENCE_LENGTH = 20 → good starting point (20 years back → predict next). You can tune this: try 10, 30, etc.
 SEQUENCE_LENGTH = 20
-EPOCHS = 20
+EPOCHS = 100
 FORECAST_STEPS = 10
 LEARNING_RATE = 0.001
 
@@ -111,40 +111,40 @@ def forecast(model, init_seq, steps):
     return np.array(preds)
 
 
-def test():
-    df = load_coastline_data(files[0])
+# def test():
+#     df = load_coastline_data(files[0])
 
-    print(df.iloc[0].Date)
-    print(df.iloc[0].Segment)
-    print(df.iloc[0].geometry)
+#     print(df.iloc[0].Date)
+#     print(df.iloc[0].Segment)
+#     print(df.iloc[0].geometry)
 
-    num_coordinate_points = {}
+#     num_coordinate_points = {}
 
-    for i in range(len(df)):
-        geom = df.iloc[i].geometry
-        num_points = 0
+#     for i in range(len(df)):
+#         geom = df.iloc[i].geometry
+#         num_points = 0
 
-        for j, line in enumerate(geom.geoms):
-            num_points += len(list(line.coords))
-            print(f"LineString {j}: {list(line.coords)} coordinate points")
+#         for j, line in enumerate(geom.geoms):
+#             num_points += len(list(line.coords))
+#             print(f"LineString {j}: {list(line.coords)} coordinate points")
 
-        if num_points not in num_coordinate_points:
-            num_coordinate_points[num_points] = 1
-        else:
-            num_coordinate_points[num_points] += 1
+#         if num_points not in num_coordinate_points:
+#             num_coordinate_points[num_points] = 1
+#         else:
+#             num_coordinate_points[num_points] += 1
 
-    print(f"dict of number of coordinate points: {num_coordinate_points}")
+#     print(f"dict of number of coordinate points: {num_coordinate_points}")
 
-    import json
+#     import json
 
-    with open("num_coordinate_points.json", "w") as f:
-        json.dump(num_coordinate_points, f, indent=2)
+#     with open("num_coordinate_points.json", "w") as f:
+#         json.dump(num_coordinate_points, f, indent=2)
 
-    sys.exit()
+#     sys.exit()
 
 
 if __name__ == "__main__":
-    test()
+    # test()
     if files:
         print(f"Found {len(files)} segment files to process")
 
@@ -206,6 +206,5 @@ if __name__ == "__main__":
                 gc.collect()
 
         print("\nTraining completed on all segments!")
-
     else:
         print("No .gpkg files found in output_segments directory")
