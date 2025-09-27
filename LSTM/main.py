@@ -10,10 +10,10 @@ from typing import List, Tuple
 import gc
 
 # ----- CONFIG -----
-INPUT_DIM = 3
+INPUT_DIM = 2  # Only lon, lat - no need for constant Z
 HIDDEN_DIM = 64
 NUM_LAYERS = 2
-OUTPUT_DIM = 3
+OUTPUT_DIM = 2  # Only predict lon, lat
 SEQUENCE_LENGTH = 20
 EPOCHS = 20
 FORECAST_STEPS = 10
@@ -26,10 +26,11 @@ def load_coastline_data(file: str) -> gpd.GeoDataFrame:
     return gpd.read_file(file)
 
 def extract_coordinates_from_geometry(geometry):
-    """Extract (lon, lat, z) coordinates from MultiLineString geometry"""
+    """Extract (lon, lat) coordinates from MultiLineString geometry, dropping Z coordinate"""
     coords = []
     for line in geometry.geoms:
-        coords.extend(list(line.coords))
+        # Only take lon, lat - drop the Z coordinate
+        coords.extend([(coord[0], coord[1]) for coord in line.coords])
     return np.array(coords)
 
 def prepare_lstm_sequences_single_segment(segment: gpd.GeoDataFrame, sequence_length: int) -> Tuple[np.ndarray, np.ndarray]:
@@ -44,7 +45,7 @@ def prepare_lstm_sequences_single_segment(segment: gpd.GeoDataFrame, sequence_le
     for _, row in segment.iterrows():
         coords = extract_coordinates_from_geometry(row.geometry)
         # Use mean coordinates for each timestep (you could also use other aggregation)
-        mean_coords = np.mean(coords, axis=0)  # [lon, lat, z]
+        mean_coords = np.mean(coords, axis=0)  # [lon, lat]
         coords_list.append(mean_coords)
     
     coords_array = np.array(coords_list)
@@ -89,7 +90,7 @@ def forecast(model, init_seq, steps):
     seq = init_seq.clone()
     
     for _ in range(steps):
-        pred = model(seq.unsqueeze(0))  # shape [1, 3] -> (lon, lat, z)
+        pred = model(seq.unsqueeze(0))  # shape [1, 2] -> (lon, lat)
         preds.append(pred.detach().numpy())
         # append prediction to sequence, drop oldest timestep
         seq = torch.cat([seq[1:], pred], dim=0)
