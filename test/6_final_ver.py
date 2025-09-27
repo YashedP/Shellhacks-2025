@@ -101,7 +101,6 @@ def make_grid(region, scale=TILE_SCALE_METERS):
 
 tiles = make_grid(florida.geometry(), TILE_SCALE_METERS)
 tile_list = tiles.toList(tiles.size())
-print("Number of tiles:", tiles.size().getInfo())
 
 # ================================
 # THREAD-SAFE PRINTING
