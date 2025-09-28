@@ -1,17 +1,18 @@
 import os
-import geopandas as gpd
-from tqdm import tqdm
-from typing import Dict, Union
 from datetime import datetime
-from shapely.geometry.linestring import LineString
-from shapely.geometry.multilinestring import MultiLineString
-from coastline_tree import CoastlineTreeNode
-import matplotlib.pyplot as plt
+from typing import Dict
 
-def ingest_historical_data(dir: str = 'data/historical') -> Dict[datetime, Dict[int, LineString]]:
+import geopandas as gpd
+from shapely.geometry.linestring import LineString
+from tqdm import tqdm
+
+
+def ingest_historical_data(
+    dir: str = "data/historical",
+) -> Dict[datetime, Dict[int, LineString]]:
     """
     Given a directory of `.gpkg` files produced by the ETL pipeline,
-    retuns a dictionary of timestamp to a dictionary of segment ID 
+    retuns a dictionary of timestamp to a dictionary of segment ID
     to segment.
     """
 
@@ -23,14 +24,14 @@ def ingest_historical_data(dir: str = 'data/historical') -> Dict[datetime, Dict[
 
     # Process every segment
     for gpkg_file in tqdm(gpkg_files, desc="Ingesting historical segments data"):
-        segment_id = int(gpkg_file.split('segment_')[1].split('.')[0])
+        segment_id = int(gpkg_file.split("segment_")[1].split(".")[0])
         df = gpd.read_file(os.path.join(dir, gpkg_file))
 
         # Drop 'Segment' column from df
-        df = df.drop('Segment', axis=1)
+        df = df.drop("Segment", axis=1)
 
         # Get dictionary from date to geometry
-        data_dict = df.set_index('Date')['geometry'].to_dict()
+        data_dict = df.set_index("Date")["geometry"].to_dict()
 
         # Ditch pandas timestamp type
         data_dict = {key.to_pydatetime(): value for key, value in data_dict.items()}
@@ -44,18 +45,3 @@ def ingest_historical_data(dir: str = 'data/historical') -> Dict[datetime, Dict[
             coastline_over_time[timestamp][segment_id] = geometry
 
     return coastline_over_time
-
-
-data = ingest_historical_data()
-
-for timestamp, coastline in data.items():
-    node = CoastlineTreeNode(coastline)
-    while (len(node.children) > 0):
-        root_geometry = node.coastline.geometry
-        gpd.GeoSeries([root_geometry], crs="EPSG:4326").plot()
-        plt.show()
-        node = node.children[0]
-    root_geometry = node.coastline.geometry
-    gpd.GeoSeries([root_geometry], crs="EPSG:4326").plot()
-    plt.show()
-    break

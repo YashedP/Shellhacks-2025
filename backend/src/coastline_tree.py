@@ -1,13 +1,16 @@
-from typing import Dict, Union
-from shapely.geometry.multilinestring import MultiLineString
-from shapely.geometry.linestring import LineString
 import math
+from typing import Dict, Optional
+
+from shapely.geometry import Polygon
+from shapely.geometry.linestring import LineString
+
 from coastline import Coastline
 
-class CoastlineTreeNode():
+
+class CoastlineTreeNode:
     """
-    A data structure which represents increasingly high 
-    fidelity segments of a coastline at a certain point 
+    A data structure which represents increasingly high
+    fidelity segments of a coastline at a certain point
     in time.
     """
 
@@ -18,26 +21,27 @@ class CoastlineTreeNode():
         if len(segments) > 1:
             children_per_group = math.ceil(len(segments) / 4)
             children_added = 0
-            
+
             # Distribute segments among children
-            for segment_id, geometry in segments.items():
+            for segment_id, geometry in sorted(segments.items()):
                 group_index = min(math.floor(children_added / children_per_group), 3)
 
                 if len(child_groups) == group_index:
                     # Add list if DNE
                     child_groups.append({})
-                
+
                 child_groups[group_index][segment_id] = geometry
                 children_added += 1
 
+        self.segments = sorted(list(segments.keys()))
         self.children = [CoastlineTreeNode(child_group) for child_group in child_groups]
+        self.bounding_box: Optional[Polygon] = None
 
-        # Define coastline based on children if we have them,
-        # or just self if leaf node
-        if len(self.children) < 1:
-            self.coastline = Coastline(list(segments.values())[0])
-        else:
-            # Assemble coastline from those of all children
-            child_coastlines = [child.coastline for child in self.children]
-            self.coastline = Coastline(child_coastlines)
+    def get_coastline(self, segments: Dict[int, LineString]):
+        # Assemble lines
+        lines = []
+        for segment_id in self.segments:
+            lines.append(segments[segment_id])
 
+        # Create object
+        return Coastline(lines)
