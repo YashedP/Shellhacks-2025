@@ -1,1 +1,1 @@
-uv run -- flask --app main run
+uv run -- flask --app src/main run
