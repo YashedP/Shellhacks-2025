@@ -18,9 +18,9 @@
         <div class="controls-panel">
             <div class="time-controls">
                 <label for="year-slider">Year: <span id="current-year">2025</span></label>
-                <input type="range" id="year-slider" min="1950" max="2100" value="2025" class="slider">
+                <input type="range" id="year-slider" min="1984" max="2100" value="2025" class="slider">
                 <div class="year-labels">
-                    <span>1950</span>
+                    <span>1984</span>
                     <span>2100</span>
                 </div>
             </div>
@@ -69,8 +69,14 @@
         let showPoints = false;
         let isAnimating = false;
         let animationInterval = null;
-        let animationSpeed = 500; // milliseconds between frames
+        let animationSpeed = 750; // milliseconds between frames
+        let animationDelay = 1500; // milliseconds before starting animation
         let currentData = null; // Store current data for toggling
+        let url, params; // Store url and params for data points
+        
+        // slow, normal, fast
+        // animation speed : slow = 1000, normal = 700, fast = 500
+        // animation delay : slow = 2500, normal = 1500, fast = 500
 
         // Initialize map
         function initMap() {
@@ -140,13 +146,35 @@
             const slider = document.getElementById('year-slider');
             slider.value = year;
             
-            // Use the web app's API endpoint
-            const bounds = currentBounds ? currentBounds.join(',') : '';
-            const url = `/api/data/${year}${bounds ? '?bounds=' + bounds : ''}`;
-            console.log('Fetching URL:', url);
+            // Call backend API for data points
+            
+            if (currentBounds) {
+                const [minLat, minLon, maxLat, maxLon] = currentBounds;
+                url = 'http://localhost:5001/instance';
+                params = new URLSearchParams({
+                    minLat: minLat,
+                    minLon: minLon,
+                    maxLat: maxLat,
+                    maxLon: maxLon,
+                    year: year
+                });
+            } else {
+                // Use global bounds if no bounds specified
+                url = 'http://localhost:5001/instance';
+                params = new URLSearchParams({
+                    minLat: -90,
+                    minLon: -180,
+                    maxLat: 90,
+                    maxLon: 180,
+                    year: year
+                });
+            }
+            
+            const fullUrl = `${url}?${params}`;
+            console.log('Fetching URL:', fullUrl);
             console.log('Current bounds:', currentBounds);
             
-            fetch(url)
+            fetch(fullUrl)
                 .then(response => {
                     console.log('Response status:', response.status);
                     if (!response.ok) {
@@ -156,8 +184,14 @@
                 })
                 .then(data => {
                     console.log('Data received:', data);
-                    displayData(data);
-                    updateUI(data);
+                    // Add year and data_type to match expected format
+                    const formattedData = {
+                        points: data.points || [],
+                        year: year,
+                        data_type: year <= 2024 ? 'historical' : 'predicted'
+                    };
+                    displayData(formattedData);
+                    updateUI(formattedData);
                     showLoading(false);
                 })
                 .catch(error => {
@@ -181,7 +215,7 @@
             return [{
                 level: 'coastline',
                 points: contourPoints,
-                color: 'blue',
+                color: 'red',
                 weight: 2
             }];
         }
@@ -297,20 +331,25 @@
             animateBtn.textContent = 'Stop Animation';
             animateBtn.classList.add('active');
             
-            // Start from current year and go to 2100
-            // currentYear is already set to the slider value, so we don't need to change it
-            document.getElementById('year-slider').value = currentYear;
-            
-            animationInterval = setInterval(() => {
-                if (currentYear >= 2100) {
-                    stopAnimation();
-                    return;
-                }
-                
-                currentYear++;
+
+            // added a delay to the animation
+            setTimeout(() => {
+                // Start from current year and go to 2100
+                // currentYear is already set to the slider value, so we don't need to change it
                 document.getElementById('year-slider').value = currentYear;
-                loadDataForYear(currentYear);
-            }, animationSpeed);
+                
+                animationInterval = setInterval(() => {
+                    if (currentYear >= 2100) {
+                        stopAnimation();
+                        return;
+                    }
+                    
+                    currentYear++;
+                    document.getElementById('year-slider').value = currentYear;
+                    document.getElementById('current-year').textContent = currentYear;
+                    loadDataForYear(currentYear);
+                }, animationSpeed);
+            }, animationDelay);
         }
 
         function stopAnimation() {
