@@ -1,6 +1,16 @@
+"""
+A data structure which represents a coastline. Typically
+used to merge multiple segments into one, contiguous line.
+Written by Joshua Sheldon
+On September 28, 2025.
+"""
+
 from typing import List, Tuple
 
+from shapely import simplify
 from shapely.geometry.linestring import LineString
+
+from hardcoded_tolerances import simplify_tolerances
 
 
 class Coastline:
@@ -37,10 +47,14 @@ class Coastline:
 
         return LineString(unique_coords)
 
-    def __init__(self, lines: List[LineString]):
+    def __init__(self, lines: List[LineString], depth: int):
         # This is a sorted list, meaning line 1 connects to line 2,
         # line 2 connects to line 3, so on and so forth
         self.geometry = self._assemble_line(lines)
+
+        # Simplify line if there's a valid depth for it
+        if depth in simplify_tolerances:
+            self.geometry = simplify(self.geometry, simplify_tolerances[depth], True)
 
         self.bounding_box = self.geometry.envelope
         self.line: List[Tuple[float, float]] = []

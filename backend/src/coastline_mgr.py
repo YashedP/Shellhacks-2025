@@ -1,3 +1,10 @@
+"""
+Manages past and future coastlines.
+Assembles data structure that assist in retrieval.
+Written by Joshua Sheldon
+On September 28, 2025
+"""
+
 from datetime import datetime
 from typing import Dict, Tuple
 
@@ -9,16 +16,13 @@ from historical_ingest import ingest_historical_data
 
 
 class CoastlineMgr:
-    def _populate_bounding_boxes(
-        self, node: CoastlineTreeNode, segments: Dict[int, LineString]
-    ):
-        # Set bounding box attribute
-        coastline = node.get_coastline(segments)
-        node.bounding_box = coastline.bounding_box
+    def _populate_depth(self, node: CoastlineTreeNode, depth: int):
+        # Set depth
+        node.depth = depth
 
         # Do some for children
         for child_node in node.children:
-            self._populate_bounding_boxes(child_node, segments)
+            self._populate_depth(child_node, depth + 1)
 
     def __init__(self):
         self.coastlines: Dict[
@@ -31,7 +35,7 @@ class CoastlineMgr:
             historical_coastlines.items(), desc="Processing historical coastlines"
         ):
             root = CoastlineTreeNode(segments)
-            self._populate_bounding_boxes(root, segments)
+            self._populate_depth(root, 0)
             self.coastlines[timestamp] = (root, segments)
 
 
