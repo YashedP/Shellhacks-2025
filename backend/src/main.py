@@ -1,9 +1,13 @@
+from datetime import datetime
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from coastline_mgr import CoastlineMgr
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
+
+# Global CoastlineMgr instance
+coastline_mgr = None
 
 @app.route("/instance")
 def instance():
@@ -39,22 +43,32 @@ def instance():
             return jsonify({'error': 'minLon must be less than maxLon'}), 400
         
         # Validate reasonable year range (e.g., 1900 to 2100)
-        if not (1900 <= year <= 2100):
-            return jsonify({'error': 'Year must be between 1900 and 2100'}), 400
-            
+        if not (1984 <= year <= 2300):
+            return jsonify({'error': 'Year must be between 1984 and 2300'}), 400
+        
     except (ValueError, TypeError) as e:
         return jsonify({'error': f'Invalid parameter type: {str(e)}'}), 400
     
-    # Convert min/max bounds to topLeft/bottomRight format for internal processing
-    topLeftLat = maxLat
-    topLeftLong = minLon
-    bottomRightLat = minLat
-    bottomRightLong = maxLon
+    # Convert to query bounds format (min_lon, min_lat, max_lon, max_lat)
+    query_bounds = (minLon, minLat, maxLon, maxLat)
     
-    # TODO: Implement data fetching logic
-    # For now, return empty data structure
+    # Create datetime object for the year (using January 1st)
+    target_date = datetime(year, 1, 1)
+    
+    # Find the closest available timestamp
+    available_timestamps = list(coastline_mgr.coastlines.keys())
+    if not available_timestamps:
+        return jsonify({'error': 'No coastline data available'}), 404
+    
+    # Find the closest timestamp to the requested year
+    closest_timestamp = min(available_timestamps, 
+                          key=lambda t: abs((t.year - year)))
+    
+    # Get coastline points within the query bounds
+    points = coastline_mgr.get_coastline_points(closest_timestamp, query_bounds)
+    
     return jsonify({
-        'points': [],
+        'points': points
     })
 
 @app.route("/sequence")
@@ -96,36 +110,36 @@ def sequence():
             return jsonify({'error': 'startYear must be less than or equal to endYear'}), 400
         
         # Validate reasonable year range (e.g., 1900 to 2100)
-        if not (1900 <= startYear <= 2100) or not (1900 <= endYear <= 2100):
+        if not (1984 <= startYear <= 2300) or not (1984 <= endYear <= 2300):
             return jsonify({'error': 'Years must be between 1900 and 2100'}), 400
+            
+        if startYear == endYear:
+            return jsonify({'error': 'startYear and endYear must be different'}), 400
             
     except (ValueError, TypeError) as e:
         return jsonify({'error': f'Invalid parameter type: {str(e)}'}), 400
     
-    # Convert min/max bounds to topLeft/bottomRight format for internal processing
-    topLeftLat = maxLat
-    topLeftLong = minLon
-    bottomRightLat = minLat
-    bottomRightLong = maxLon
+    # Convert to query bounds format (min_lon, min_lat, max_lon, max_lat)
+    query_bounds = (minLon, minLat, maxLon, maxLat)
     
-    # TODO: Implement data fetching logic
-    # For now, return empty data structure
+    available_timestamps = list(coastline_mgr.coastlines.keys())    
     result = {}
     for year in range(startYear, endYear + 1):
-        result[str(year)] = []
-    
+        # Find the closest timestamp to the requested year
+        closest_timestamp = min(available_timestamps, 
+                              key=lambda t: abs((t.year - year)))
+        
+        # Get coastline points within the query bounds
+        points = coastline_mgr.get_coastline_points(closest_timestamp, query_bounds)
+        
+        result[str(year)] = points    
     return jsonify(result)
 
 if __name__ == '__main__':
     # Initialize function - equivalent to Lambda cold start
     print("Starting application initialization...")
 
-    
-    # Check if data was loaded successfully
-    if historical_data is None or historical_data.empty:
-        print("WARNING: No historical data loaded!")
-    if predicted_data is None or predicted_data.empty:
-        print("WARNING: No predicted data loaded!")
-    
+    coastline_mgr = CoastlineMgr()
+
     print("Application ready to serve requests")
     app.run(debug=True, host='0.0.0.0', port=5001)
