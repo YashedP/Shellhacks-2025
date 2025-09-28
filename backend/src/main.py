@@ -43,8 +43,8 @@ def instance():
             return jsonify({'error': 'minLon must be less than maxLon'}), 400
         
         # Validate reasonable year range (e.g., 1900 to 2100)
-        if not (1984 <= year <= 2300):
-            return jsonify({'error': 'Year must be between 1984 and 2300'}), 400
+        if not (1984 <= year <= 2100):
+            return jsonify({'error': 'Year must be between 1984 and 2100'}), 400
         
     except (ValueError, TypeError) as e:
         return jsonify({'error': f'Invalid parameter type: {str(e)}'}), 400
@@ -59,10 +59,10 @@ def instance():
     available_timestamps = list(coastline_mgr.coastlines.keys())
     if not available_timestamps:
         return jsonify({'error': 'No coastline data available'}), 404
-    
-    # Find the closest timestamp to the requested year
+
+    # Find the closest timestamp
     closest_timestamp = min(available_timestamps, 
-                          key=lambda t: abs((t.year - year)))
+                            key=lambda t: abs((t.year - year)))
     
     # Get coastline points within the query bounds
     points = coastline_mgr.get_coastline_points(closest_timestamp, query_bounds)
@@ -110,7 +110,7 @@ def sequence():
             return jsonify({'error': 'startYear must be less than or equal to endYear'}), 400
         
         # Validate reasonable year range (e.g., 1900 to 2100)
-        if not (1984 <= startYear <= 2300) or not (1984 <= endYear <= 2300):
+        if not (1984 <= startYear <= 2100) or not (1984 <= endYear <= 2100):
             return jsonify({'error': 'Years must be between 1900 and 2100'}), 400
             
         if startYear == endYear:
@@ -125,9 +125,9 @@ def sequence():
     available_timestamps = list(coastline_mgr.coastlines.keys())    
     result = {}
     for year in range(startYear, endYear + 1):
-        # Find the closest timestamp to the requested year
+        # Find the closest timestamp
         closest_timestamp = min(available_timestamps, 
-                              key=lambda t: abs((t.year - year)))
+                                key=lambda t: abs((t.year - year)))
         
         # Get coastline points within the query bounds
         points = coastline_mgr.get_coastline_points(closest_timestamp, query_bounds)
@@ -142,4 +142,4 @@ if __name__ == '__main__':
     coastline_mgr = CoastlineMgr()
 
     print("Application ready to serve requests")
-    app.run(debug=True, host='0.0.0.0', port=5001)
+    app.run(debug=False, host='0.0.0.0', port=5001)

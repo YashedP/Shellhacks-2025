@@ -13,6 +13,7 @@ from tqdm import tqdm
 
 from coastline_tree import CoastlineTreeNode
 from historical_ingest import ingest_historical_data
+from future_ingest import ingest_future_data
 
 
 class CoastlineMgr:
@@ -29,10 +30,31 @@ class CoastlineMgr:
             datetime, Tuple[CoastlineTreeNode, Dict[int, LineString]]
         ] = {}
 
+        # Ingest historical data (1984-2025)
         historical_coastlines = ingest_historical_data()
+        
+        # Generate future predictions using stats
+        from future_ingest import compute_stats_means, generate_future_predictions_from_stats
+        
+        # Compute stats means for all segments
+        stats_means = compute_stats_means()
+        
+        # Generate future predictions based on stats
+        future_coastlines = generate_future_predictions_from_stats(
+            stats_means=stats_means
+        )
 
+        # Process historical coastlines
         for timestamp, segments in tqdm(
             historical_coastlines.items(), desc="Processing historical coastlines"
+        ):
+            root = CoastlineTreeNode(segments)
+            self._populate_depth(root, 0)
+            self.coastlines[timestamp] = (root, segments)
+            
+        # Process future coastlines
+        for timestamp, segments in tqdm(
+            future_coastlines.items(), desc="Processing future coastlines"
         ):
             root = CoastlineTreeNode(segments)
             self._populate_depth(root, 0)
