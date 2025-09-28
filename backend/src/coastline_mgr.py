@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Dict, Tuple
+from typing import Dict, List, Tuple
 
 from shapely.geometry.linestring import LineString
 from tqdm import tqdm
@@ -34,5 +34,15 @@ class CoastlineMgr:
             self._populate_bounding_boxes(root, segments)
             self.coastlines[timestamp] = (root, segments)
 
+    def get_coastline_points(self, timestamp: datetime, 
+                           query_bounds: Tuple[float, float, float, float]) -> List[Tuple[float, float]]:
+        """
+        Get coastline points for a specific timestamp within the given query bounds.
+        Query bounds format: (min_lon, min_lat, max_lon, max_lat)
+        """
+        if timestamp not in self.coastlines:
+            return []
+        
+        root, segments = self.coastlines[timestamp]
+        return root.get_points_in_bounds(segments, query_bounds)
 
-CoastlineMgr()
