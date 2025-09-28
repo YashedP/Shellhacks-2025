@@ -48,9 +48,16 @@ def get_data_for_year(year):
     """Get data for a specific year within current bounds"""
     bounds = request.args.get('bounds')
     if bounds and bounds.strip():  # Check if bounds is not empty or just whitespace
-        bounds = [float(x) for x in bounds.split(',')]
+        try:
+            bounds = [float(x) for x in bounds.split(',')]
+            print(f"Parsed bounds: {bounds}")
+        except ValueError as e:
+            print(f"Error parsing bounds: {e}")
+            bounds = None
     else:
         bounds = None  # Set to None if empty or whitespace
+    
+    print(f"Fetching data for year {year} with bounds: {bounds}")
     
     # Fetch data from backend API
     api_data = fetch_data_from_api(bounds, year)

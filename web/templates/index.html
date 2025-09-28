@@ -136,10 +136,15 @@
             console.log('Loading data for year:', year);
             showLoading(true);
             
+            // Update slider value to match the year being loaded
+            const slider = document.getElementById('year-slider');
+            slider.value = year;
+            
             // Use the web app's API endpoint
             const bounds = currentBounds ? currentBounds.join(',') : '';
             const url = `/api/data/${year}${bounds ? '?bounds=' + bounds : ''}`;
             console.log('Fetching URL:', url);
+            console.log('Current bounds:', currentBounds);
             
             fetch(url)
                 .then(response => {
@@ -157,6 +162,8 @@
                 })
                 .catch(error => {
                     console.error('Error loading data:', error);
+                    // Show error message to user
+                    alert('Error loading data: ' + error.message);
                     showLoading(false);
                 });
         }
@@ -335,7 +342,26 @@
                 stopAnimation();
             }
             currentYear = parseInt(e.target.value);
+            document.getElementById('current-year').textContent = currentYear;
             loadDataForYear(currentYear);
+        });
+
+        // Also listen for change event for better compatibility
+        document.getElementById('year-slider').addEventListener('change', function(e) {
+            // Stop animation if user manually changes year
+            if (isAnimating) {
+                stopAnimation();
+            }
+            currentYear = parseInt(e.target.value);
+            document.getElementById('current-year').textContent = currentYear;
+            loadDataForYear(currentYear);
+        });
+
+        // Add mousedown event for immediate feedback
+        document.getElementById('year-slider').addEventListener('mousedown', function(e) {
+            if (isAnimating) {
+                stopAnimation();
+            }
         });
 
         document.getElementById('reset-zoom').addEventListener('click', function() {
@@ -372,10 +398,23 @@
             }
         });
 
+        // Debug function to check slider state
+        function debugSlider() {
+            const slider = document.getElementById('year-slider');
+            const currentYearDisplay = document.getElementById('current-year');
+            console.log('Slider value:', slider.value);
+            console.log('Current year variable:', currentYear);
+            console.log('Display text:', currentYearDisplay.textContent);
+            console.log('Slider min/max:', slider.min, slider.max);
+        }
+
         // Initialize when page loads
         document.addEventListener('DOMContentLoaded', function() {
             initMap();
             updateButtonColors(); // Initialize button colors
+            
+            // Add debug function to window for console access
+            window.debugSlider = debugSlider;
         });
     </script>   
 </body>
