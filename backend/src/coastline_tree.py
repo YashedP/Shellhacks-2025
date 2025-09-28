@@ -24,6 +24,15 @@ class CoastlineTreeNode:
     in time.
     """
 
+    def _assemble_lines(self, segments: Dict[int, LineString]):
+        """
+        Assemble list of lines IN ORDER from segments.
+        """
+        lines = []
+        for segment_id in self.segments:
+            lines.append(segments[segment_id])
+        return lines
+
     @staticmethod
     def _calculate_bounding_box(lines: List[LineString]) -> Polygon:
         """
@@ -70,10 +79,10 @@ class CoastlineTreeNode:
         self.children = [CoastlineTreeNode(child_group) for child_group in child_groups]
 
         self.bounding_box: Polygon = self._calculate_bounding_box(
-            [segments[segment_id] for segment_id in self.segments]
+            self._assemble_lines(segments)
         )
         self.depth = -1
 
     def get_coastline(self, segments: Dict[int, LineString]):
         # Create object
-        return Coastline([segments[segment_id] for segment_id in segments], self.depth)
+        return Coastline(self._assemble_lines(segments), self.depth)
