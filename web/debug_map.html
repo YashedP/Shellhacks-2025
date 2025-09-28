@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Debug Map - Sea Level Prediction</title>
+    <title>Debug Map - Coastline Prediction</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         body {
@@ -89,7 +89,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>🌊 Debug Map - Sea Level Prediction</h1>
+        <h1>🌊 Debug Map - Coastline Prediction</h1>
         
         <div class="controls">
             <label for="year-slider">Year: <span id="current-year">2024</span></label>
@@ -155,8 +155,8 @@
             log('Initializing map...');
             
             try {
-                // Create map centered on US East Coast
-                map = L.map('map').setView([37.7749, -75.4194], 6);
+                // Create map centered on Florida
+                map = L.map('map').setView([27.7663, -82.6404], 6);
                 log('Map created successfully');
                 
                 // Add tile layer
@@ -252,16 +252,16 @@
             log(`Displaying ${points.length} points`);
             
             points.forEach((point, index) => {
-                const marker = L.circleMarker([point.lat, point.lon], {
+                const marker = L.circleMarker([point[1], point[0]], {
                     radius: 4,
-                    fillColor: getPointColor(point.sea_level),
+                    fillColor: 'blue',
                     color: '#000',
                     weight: 1,
                     opacity: 1,
                     fillOpacity: 0.8
                 }).addTo(map);
                 
-                marker.bindPopup(`Point ${index + 1}<br>Lat: ${point.lat}<br>Lon: ${point.lon}<br>Sea Level: ${point.sea_level}m`);
+                marker.bindPopup(`Point ${index + 1}<br>Lat: ${point[1]}<br>Lon: ${point[0]}`);
                 pointLayers.push(marker);
             });
             
@@ -280,19 +280,15 @@
                         opacity: 0.8
                     }).addTo(map);
                     
-                    polyline.bindPopup(`Sea Level: ${contour.level}`);
+                    polyline.bindPopup(`Elevation: ${contour.level}`);
                     contourLayers.push(polyline);
                 }
             });
         }
 
-        // Get color for point based on sea level
-        function getPointColor(level) {
-            if (level < 0.2) return 'green';
-            if (level < 0.4) return 'yellow';
-            if (level < 0.6) return 'orange';
-            if (level < 0.8) return 'red';
-            return 'darkred';
+        // All coastline points are blue since they represent the coastline
+        function getPointColor() {
+            return 'blue';
         }
 
         // Clear all layers
@@ -334,23 +330,23 @@
         });
 
         document.getElementById('reset-view').addEventListener('click', function() {
-            map.setView([37.7749, -75.4194], 6);
+            map.setView([27.7663, -82.6404], 6);
             log('View reset to default');
         });
 
         document.getElementById('test-data').addEventListener('click', function() {
             // Add some test markers
             const testPoints = [
-                {lat: 40.7128, lon: -74.0060, sea_level: 0.5, name: 'New York'},
-                {lat: 39.9526, lon: -75.1652, sea_level: 0.6, name: 'Philadelphia'},
-                {lat: 38.9072, lon: -77.0369, sea_level: 0.4, name: 'Washington DC'},
-                {lat: 36.1699, lon: -115.1398, sea_level: 0.3, name: 'Las Vegas'},
-                {lat: 25.7617, lon: -80.1918, sea_level: 0.8, name: 'Miami'}
+                [40.7128, -74.0060],
+                [39.9526, -75.1652],
+                [38.9072, -77.0369],
+                [36.1699, -115.1398],
+                [25.7617, -80.1918]
             ];
             
-            testPoints.forEach(point => {
-                const marker = L.marker([point.lat, point.lon]).addTo(map);
-                marker.bindPopup(`${point.name}<br>Sea Level: ${point.sea_level}m`);
+            testPoints.forEach((point, index) => {
+                const marker = L.marker([point[0], point[1]]).addTo(map);
+                marker.bindPopup(`Test Point ${index + 1}<br>Lat: ${point[0]}<br>Lon: ${point[1]}`);
             });
             
             log(`Added ${testPoints.length} test markers`);

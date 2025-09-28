@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fragmented Sea Level Rising Prediction</title>
+    <title>Fragmented Coastline Prediction</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -11,14 +11,14 @@
 <body>
     <div class="container">
         <header class="header">
-            <h1>🌊 Fragmented Sea Level Rising Prediction</h1>
-            <p>Interactive visualization of historical and predicted sea level data</p>
+            <h1>🌊 Fragmented Coastline Prediction</h1>
+            <p>Interactive visualization of historical and predicted coastline data</p>
         </header>
 
         <div class="controls-panel">
             <div class="time-controls">
-                <label for="year-slider">Year: <span id="current-year">2024</span></label>
-                <input type="range" id="year-slider" min="1950" max="2100" value="2024" class="slider">
+                <label for="year-slider">Year: <span id="current-year">2025</span></label>
+                <input type="range" id="year-slider" min="1950" max="2100" value="2025" class="slider">
                 <div class="year-labels">
                     <span>1950</span>
                     <span>2100</span>
@@ -56,37 +56,12 @@
             </div>
         </div>
 
-        <div class="legend">
-            <h3>Sea Level Legend</h3>
-            <div class="legend-items">
-                <div class="legend-item">
-                    <div class="color-box" style="background-color: green;"></div>
-                    <span>0 - 0.5m</span>
-                </div>
-                <div class="legend-item">
-                    <div class="color-box" style="background-color: yellow;"></div>
-                    <span>0.5 - 1.0m</span>
-                </div>
-                <div class="legend-item">
-                    <div class="color-box" style="background-color: orange;"></div>
-                    <span>1.0 - 1.5m</span>
-                </div>
-                <div class="legend-item">
-                    <div class="color-box" style="background-color: red;"></div>
-                    <span>1.5 - 2.0m</span>
-                </div>
-                <div class="legend-item">
-                    <div class="color-box" style="background-color: darkred;"></div>
-                    <span>2.0m+</span>
-                </div>
-            </div>
-        </div>
     </div>
 
     <script>
         // Global variables
         let map;
-        let currentYear = 2024;
+        let currentYear = 2025;
         let currentBounds = null;
         let contourLayers = [];
         let pointLayers = [];
@@ -102,7 +77,7 @@
             console.log('Initializing map...');
             
             try {
-                map = L.map('map').setView([37.7749, -122.4194], 6);
+                map = L.map('map').setView([27.7663, -82.6404], 6);
                 console.log('Map created successfully');
                 
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -161,11 +136,9 @@
             console.log('Loading data for year:', year);
             showLoading(true);
             
-            // Use the new API endpoint with proper parameter names
-            const bounds = currentBounds ? currentBounds : [90, -180, -90, 180]; // Default to global bounds
-            const [minLat, minLon, maxLat, maxLon] = bounds;
-            
-            const url = `http://localhost:5001/instance?minLat=${minLat}&minLon=${minLon}&maxLat=${maxLat}&maxLon=${maxLon}&year=${year}`;
+            // Use the web app's API endpoint
+            const bounds = currentBounds ? currentBounds.join(',') : '';
+            const url = `/api/data/${year}${bounds ? '?bounds=' + bounds : ''}`;
             console.log('Fetching URL:', url);
             
             fetch(url)
@@ -178,25 +151,32 @@
                 })
                 .then(data => {
                     console.log('Data received:', data);
-                    // Convert the new API response format to the expected format
-                    const formattedData = {
-                        points: data.points.map(point => ({
-                            lat: point[0],
-                            lon: point[1],
-                            sea_level: 0.5 // Default sea level for visualization
-                        })),
-                        contours: data.contours || [], // Use contours from API
-                        year: year,
-                        data_type: year <= 2024 ? 'historical' : 'predicted'
-                    };
-                    displayData(formattedData);
-                    updateUI(formattedData);
+                    displayData(data);
+                    updateUI(data);
                     showLoading(false);
                 })
                 .catch(error => {
                     console.error('Error loading data:', error);
                     showLoading(false);
                 });
+        }
+
+        // Generate contours from coordinate points
+        function generateContoursFromPoints(points) {
+            if (!points || points.length === 0) return [];
+            
+            // Convert points to a simple line contour
+            // API returns [lon, lat] tuples, convert to [lat, lon] for Leaflet
+            const contourPoints = points.map(point => {
+                return [point[1], point[0]]; // Convert [lon, lat] to [lat, lon]
+            });
+            
+            return [{
+                level: 'coastline',
+                points: contourPoints,
+                color: 'blue',
+                weight: 2
+            }];
         }
 
         // Display data on map
@@ -207,8 +187,10 @@
             // Clear existing layers
             clearLayers();
             
-            if (data.contours && showContours) {
-                displayContours(data.contours);
+            if (data.points && showContours) {
+                // Generate contours from points
+                const contours = generateContoursFromPoints(data.points);
+                displayContours(contours);
             }
             
             if (data.points && showPoints) {
@@ -222,11 +204,11 @@
                 if (contour.points.length > 1) {
                     const polyline = L.polyline(contour.points, {
                         color: contour.color,
-                        weight: 2,
-                        opacity: 0.7
+                        weight: contour.weight || 2,
+                        opacity: 0.8
                     }).addTo(map);
                     
-                    polyline.bindPopup(`Sea Level: ${contour.level}`);
+                    polyline.bindPopup(`Coastline: ${contour.level}`);
                     contourLayers.push(polyline);
                 }
             });
@@ -235,28 +217,24 @@
         // Display individual points
         function displayPoints(points) {
             points.forEach(point => {
-                const marker = L.circleMarker([point.lat, point.lon], {
+                // API returns [lon, lat] tuples
+                const lon = point[0];
+                const lat = point[1];
+                
+                const marker = L.circleMarker([lat, lon], {
                     radius: 3,
-                    fillColor: getPointColor(point.sea_level),
+                    fillColor: 'blue',
                     color: '#000',
                     weight: 1,
                     opacity: 1,
                     fillOpacity: 0.7
                 }).addTo(map);
                 
-                marker.bindPopup(`Sea Level: ${point.sea_level}m`);
+                marker.bindPopup(`Coastline Point: ${lat.toFixed(4)}, ${lon.toFixed(4)}`);
                 pointLayers.push(marker);
             });
         }
 
-        // Get color for point based on sea level
-        function getPointColor(level) {
-            if (level < 0.5) return 'green';
-            if (level < 1.0) return 'yellow';
-            if (level < 1.5) return 'orange';
-            if (level < 2.0) return 'red';
-            return 'darkred';
-        }
 
         // Clear all layers
         function clearLayers() {
@@ -365,7 +343,7 @@
             if (isAnimating) {
                 stopAnimation();
             }
-            map.setView([37.7749, -122.4194], 6);
+            map.setView([27.7663, -82.6404], 6);
             currentBounds = null; // Will use global bounds in loadDataForYear
             loadDataForYear(currentYear);
         });
