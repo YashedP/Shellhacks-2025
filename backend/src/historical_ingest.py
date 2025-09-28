@@ -1,3 +1,11 @@
+"""
+Takes in a folder of `.gpkg` files, each representing how a
+segment of the coastline changes over time. Formats it
+to be consumed by the `CoastlineMgr`.
+Written by Joshua Sheldon
+On September 28, 2025.
+"""
+
 import os
 from datetime import datetime
 from typing import Dict
