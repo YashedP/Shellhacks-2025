@@ -17,11 +17,11 @@
 
         <div class="controls-panel">
             <div class="time-controls">
-                <label for="year-slider">Year: <span id="current-year">2025</span></label>
-                <input type="range" id="year-slider" min="1984" max="2100" value="2025" class="slider">
+                <label for="year-slider">Year: <span id="current-year">2021</span></label>
+                <input type="range" id="year-slider" min="1984" max="2096" value="2021" class="slider">
                 <div class="year-labels">
                     <span>1984</span>
-                    <span>2100</span>
+                    <span>2096</span>
                 </div>
             </div>
             
@@ -61,7 +61,7 @@
     <script>
         // Global variables
         let map;
-        let currentYear = 2025;
+        let currentYear = 2021;
         let currentBounds = null;
         let contourLayers = [];
         let pointLayers = [];
@@ -188,7 +188,7 @@
                     const formattedData = {
                         points: data.points || [],
                         year: year,
-                        data_type: year <= 2024 ? 'historical' : 'predicted'
+                        data_type: year <= 2021 ? 'historical' : 'predicted'
                     };
                     displayData(formattedData);
                     updateUI(formattedData);
