@@ -42,6 +42,7 @@
 
             <div class="map-controls">
                 <button id="reset-zoom" class="btn">Reset View</button>
+                <button id="animate-btn" class="btn">Animate</button>
                 <button id="toggle-contours" class="btn active">Show Contours</button>
                 <button id="toggle-points" class="btn">Show Points</button>
             </div>
@@ -91,6 +92,10 @@
         let pointLayers = [];
         let showContours = true;
         let showPoints = false;
+        let isAnimating = false;
+        let animationInterval = null;
+        let animationSpeed = 500; // milliseconds between frames
+        let currentData = null; // Store current data for toggling
 
         // Initialize map
         function initMap() {
@@ -125,6 +130,7 @@
         // Update bounds when map view changes
         function updateBounds() {
             const bounds = map.getBounds();
+            // Store bounds as [min latitude, min longitude, max latitude, max longitude]
             currentBounds = [
                 bounds.getSouth(), // min latitude
                 bounds.getWest(), // min longitude
@@ -138,7 +144,7 @@
                 area > 1000000 ? 'Global' : 
                 area > 100000 ? 'Regional' : 'Local';
             
-            // Reload data with new bounds
+            // Reload data with new bounds - this will update year and data type
             loadDataForYear(currentYear);
         }
 
@@ -155,8 +161,11 @@
             console.log('Loading data for year:', year);
             showLoading(true);
             
-            const boundsParam = currentBounds ? currentBounds.join(',') : '';
-            const url = `/api/data/${year}?bounds=${boundsParam}`;
+            // Use the new API endpoint with proper parameter names
+            const bounds = currentBounds ? currentBounds : [90, -180, -90, 180]; // Default to global bounds
+            const [minLat, minLon, maxLat, maxLon] = bounds;
+            
+            const url = `http://localhost:5001/instance?minLat=${minLat}&minLon=${minLon}&maxLat=${maxLat}&maxLon=${maxLon}&year=${year}`;
             console.log('Fetching URL:', url);
             
             fetch(url)
@@ -169,8 +178,19 @@
                 })
                 .then(data => {
                     console.log('Data received:', data);
-                    displayData(data);
-                    updateUI(data);
+                    // Convert the new API response format to the expected format
+                    const formattedData = {
+                        points: data.points.map(point => ({
+                            lat: point[0],
+                            lon: point[1],
+                            sea_level: 0.5 // Default sea level for visualization
+                        })),
+                        contours: data.contours || [], // Use contours from API
+                        year: year,
+                        data_type: year <= 2024 ? 'historical' : 'predicted'
+                    };
+                    displayData(formattedData);
+                    updateUI(formattedData);
                     showLoading(false);
                 })
                 .catch(error => {
@@ -181,6 +201,9 @@
 
         // Display data on map
         function displayData(data) {
+            // Store current data for toggling
+            currentData = data;
+            
             // Clear existing layers
             clearLayers();
             
@@ -245,7 +268,7 @@
 
         // Update UI elements
         function updateUI(data) {
-            document.getElementById('current-year').textContent = currentYear;
+            document.getElementById('current-year').textContent = data.year || currentYear;
             document.getElementById('data-count').textContent = data.points ? data.points.length : 0;
             document.getElementById('data-type').textContent = 
                 data.data_type === 'historical' ? 'Historical' : 'Predicted';
@@ -253,38 +276,129 @@
 
         // Show/hide loading indicator
         function showLoading(show) {
+            // Don't show loading during animation to prevent flickering
+            if (isAnimating) return;
+            
             const loading = document.getElementById('loading');
             loading.style.display = show ? 'flex' : 'none';
         }
 
+        // Update button colors based on active state
+        function updateButtonColors() {
+            const contoursBtn = document.getElementById('toggle-contours');
+            const pointsBtn = document.getElementById('toggle-points');
+            
+            // Remove all color classes
+            contoursBtn.classList.remove('active', 'both-active');
+            pointsBtn.classList.remove('active', 'both-active');
+            
+            if (showContours && showPoints) {
+                // Both active - green
+                contoursBtn.classList.add('both-active');
+                pointsBtn.classList.add('both-active');
+            } else if (showContours || showPoints) {
+                // One active - red
+                if (showContours) contoursBtn.classList.add('active');
+                if (showPoints) pointsBtn.classList.add('active');
+            }
+        }
+
+        // Animation functions
+        function startAnimation() {
+            if (isAnimating) return;
+            
+            isAnimating = true;
+            const animateBtn = document.getElementById('animate-btn');
+            animateBtn.textContent = 'Stop Animation';
+            animateBtn.classList.add('active');
+            
+            // Start from current year and go to 2100
+            // currentYear is already set to the slider value, so we don't need to change it
+            document.getElementById('year-slider').value = currentYear;
+            
+            animationInterval = setInterval(() => {
+                if (currentYear >= 2100) {
+                    stopAnimation();
+                    return;
+                }
+                
+                currentYear++;
+                document.getElementById('year-slider').value = currentYear;
+                loadDataForYear(currentYear);
+            }, animationSpeed);
+        }
+
+        function stopAnimation() {
+            if (!isAnimating) return;
+            
+            isAnimating = false;
+            const animateBtn = document.getElementById('animate-btn');
+            animateBtn.textContent = 'Animate';
+            animateBtn.classList.remove('active');
+            
+            if (animationInterval) {
+                clearInterval(animationInterval);
+                animationInterval = null;
+            }
+        }
+
+        function toggleAnimation() {
+            if (isAnimating) {
+                stopAnimation();
+            } else {
+                startAnimation();
+            }
+        }
+
         // Event listeners
         document.getElementById('year-slider').addEventListener('input', function(e) {
+            // Stop animation if user manually changes year
+            if (isAnimating) {
+                stopAnimation();
+            }
             currentYear = parseInt(e.target.value);
             loadDataForYear(currentYear);
         });
 
         document.getElementById('reset-zoom').addEventListener('click', function() {
+            // Stop animation when resetting
+            if (isAnimating) {
+                stopAnimation();
+            }
             map.setView([37.7749, -122.4194], 6);
-            currentBounds = null;
+            currentBounds = null; // Will use global bounds in loadDataForYear
             loadDataForYear(currentYear);
+        });
+
+        document.getElementById('animate-btn').addEventListener('click', function() {
+            toggleAnimation();
         });
 
         document.getElementById('toggle-contours').addEventListener('click', function() {
             showContours = !showContours;
             this.classList.toggle('active');
-            displayData({contours: contourLayers, points: pointLayers});
+            updateButtonColors();
+            // Refresh display with current data
+            if (currentData) {
+                displayData(currentData);
+            }
         });
 
         document.getElementById('toggle-points').addEventListener('click', function() {
             showPoints = !showPoints;
             this.classList.toggle('active');
-            displayData({contours: contourLayers, points: pointLayers});
+            updateButtonColors();
+            // Refresh display with current data
+            if (currentData) {
+                displayData(currentData);
+            }
         });
 
         // Initialize when page loads
         document.addEventListener('DOMContentLoaded', function() {
             initMap();
+            updateButtonColors(); // Initialize button colors
         });
-    </script>
+    </script>   
 </body>
 </html>
