@@ -86,24 +86,33 @@ class CoastlineTreeNode:
     def get_coastline(self, segments: Dict[int, LineString]):
         # Create object
         return Coastline(self._assemble_lines(segments), self.depth)
-    
-    def is_fully_contained_in(self, query_bounds: Tuple[float, float, float, float]) -> bool:
+
+    def is_fully_contained_in(
+        self, query_bounds: Tuple[float, float, float, float]
+    ) -> bool:
         if self.bounding_box is None:
             return False
-        
+
         # Get bounding box coordinates
         minx, miny, maxx, maxy = self.bounding_box.bounds
-        
+
         # Check if node's bounding box is fully contained within query bounds
         query_min_lon, query_min_lat, query_max_lon, query_max_lat = query_bounds
-        
-        return (query_min_lon <= minx and query_min_lat <= miny and 
-                query_max_lon >= maxx and query_max_lat >= maxy)
 
-    def get_points_in_bounds(self, segments: Dict[int, LineString], 
-                            query_bounds: Tuple[float, float, float, float]) -> List[Tuple[float, float]]:
+        return (
+            query_min_lon <= minx
+            and query_min_lat <= miny
+            and query_max_lon >= maxx
+            and query_max_lat >= maxy
+        )
+
+    def get_points_in_bounds(
+        self,
+        segments: Dict[int, LineString],
+        query_bounds: Tuple[float, float, float, float],
+    ) -> List[Tuple[float, float]]:
         points = []
-        
+
         # If this node is fully contained, return all its points
         if self.is_fully_contained_in(query_bounds):
             coastline = self.get_coastline(segments)
@@ -112,5 +121,5 @@ class CoastlineTreeNode:
             # Otherwise, check children
             for child in self.children:
                 points.extend(child.get_points_in_bounds(segments, query_bounds))
-        
+
         return points

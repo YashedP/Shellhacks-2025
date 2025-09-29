@@ -1,6 +1,8 @@
 import geopandas as gpd
-import numpy as np
+import os, json, torch, numpy as np
+import matplotlib.pyplot as plt
 import pandas as pd
+import math
 
 # get stats about average change in lat over time from rollout predictions vs real data
 def compute_lat_change_stats(gpkg_path, date_col="Date", seg_col="Segment", real_col="geometry"):
@@ -29,10 +31,11 @@ def compute_lat_change_stats(gpkg_path, date_col="Date", seg_col="Segment", real
         "real_mean": np.mean(real_changes),
         "real_std": np.std(real_changes),
     }
-    # print("Latitude Change Stats:", stats)  # Commented out to avoid cluttering output
+    print("Latitude Change Stats:", stats)
     return stats
 
 if __name__ == "__main__":
+
     segment = 1
     stats_list = []
     # average all 250 segments from rollout data stats
@@ -47,9 +50,40 @@ if __name__ == "__main__":
     # e.g., store in a list and compute overall mean/std
     all_real_means = [s["real_mean"] for s in stats_list if "real_mean" in s]
     all_real_stds = [s["real_std"] for s in stats_list if "real_std" in s]
+    # plot distribution of real means
+    plt.hist(all_real_means, bins=30, alpha=0.7, color='blue', edgecolor='black')
+    plt.title("Distribution of Real Latitude Change Means Across Segments")
+    plt.show()
 
     overall_stats = {
         "overall_real_mean": np.mean(all_real_means),
         "overall_real_std": np.mean(all_real_stds),
     }
-    # print("Overall Latitude Change Stats Across rollout Segments:", overall_stats)  # Commented out to avoid cluttering output
+    print("Overall Latitude Change Stats Across rollout Segments:", overall_stats)
+
+
+    segment = 1
+    gpkg_path = f"segment_gdfs/segment_{segment}.gpkg"  # Example path
+    stats_list = []
+    # average all 250 segments from real data stats
+    for segment in range(1, 251):
+        gpkg_path = f"segment_gdfs/segment_{segment}.gpkg"
+        try:
+            stats = compute_lat_change_stats(gpkg_path, date_col="Date", seg_col="Segment")
+        except Exception as e:
+            print(f"Error processing segment {segment}: {e}")
+        stats_list.append(stats)
+    # aggregate stats across segments as needed
+    # e.g., store in a list and compute overall mean/std
+    all_real_means = [s["real_mean"] for s in stats_list if "real_mean" in s]
+    all_real_stds = [s["real_std"] for s in stats_list if "real_std" in s]
+    # plot distribution of real means
+    plt.hist(all_real_means, bins=30, alpha=0.7, color='blue', edgecolor='black')
+    plt.title("Distribution of Real Latitude Change Means Across Segments")
+    plt.show()
+
+    overall_stats = {
+        "overall_real_mean": np.mean(all_real_means),
+        "overall_real_std": np.mean(all_real_stds),
+    }
+    print("Overall Latitude Change Stats Across Segments:", overall_stats)
