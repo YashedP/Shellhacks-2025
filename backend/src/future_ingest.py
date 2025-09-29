@@ -1,5 +1,5 @@
 """
-Takes in a `.csv` containing the output of our transformer, 
+Takes in a `.csv` containing the output of our transformer,
 then returns future data about the coastline.
 Written by Joshua Sheldon
 On September 29, 2025

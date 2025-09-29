@@ -150,7 +150,7 @@
             
             if (currentBounds) {
                 const [minLat, minLon, maxLat, maxLon] = currentBounds;
-                url = 'http://localhost:5001/instance';
+                url = 'http://localhost:5001/';
                 params = new URLSearchParams({
                     minLat: minLat,
                     minLon: minLon,
@@ -160,7 +160,7 @@
                 });
             } else {
                 // Use global bounds if no bounds specified
-                url = 'http://localhost:5001/instance';
+                url = 'http://localhost:5001/';
                 params = new URLSearchParams({
                     minLat: -90,
                     minLon: -180,

@@ -52,6 +52,8 @@ class CoastlineMgr:
             self._populate_depth(root, 0)
             self.coastlines[timestamp] = (root, segments)
 
+        self.sorted_timestamps = sorted(list(self.coastlines.keys()))
+
     def get_coastline_points(
         self, timestamp: datetime, query_bounds: Tuple[float, float, float, float]
     ) -> List[Tuple[float, float]]:
