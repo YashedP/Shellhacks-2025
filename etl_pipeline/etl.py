@@ -13,13 +13,13 @@ import zipfile
 
 import fiona
 import geopandas as gpd
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import requests
+from shapely.geometry import LineString, Point
 from shapely.ops import unary_union
-from shapely.geometry import Point, LineString
 from tqdm import tqdm
-import matplotlib.pyplot as plt
 
 # ----- CONFIG -----
 
@@ -31,6 +31,7 @@ segment_height = 0.02
 output_dir = "segment_gdfs"
 
 # ----- LOGIC -----
+
 
 # First, download the data
 def download_file(url, filename):
@@ -81,15 +82,32 @@ if os.path.isdir(shp_dir):
 else:
     print(f"Fixing {kml_name} and converting to shapefile...")
     with fiona.open(kml_name) as input:
+        if input.schema is None:
+            raise Exception(f"{kml_name} doesn't have a valid schema!")
+
+        # Create a modified schema that converts datetime fields to strings
+        output_schema = input.schema.copy()
+
+        # Convert any datetime fields to string type
+        for field_name, field_type in list(output_schema["properties"].items()):
+            if field_type.startswith("datetime"):
+                output_schema["properties"][field_name] = "str"
+
         # Write to shapefile
         with fiona.open(
-            shp_dir, "w", "ESRI Shapefile", input.schema.copy(), input.crs # type: ignore
+            shp_dir, "w", "ESRI Shapefile", input.schema.copy(), input.crs  # type: ignore
         ) as output:
             # Iterate through features
             for elem in input:
                 if elem["geometry"] is None:
                     # We don't care about this feature
                     continue
+
+                # Convert datetime properties to strings
+                properties = dict(elem["properties"])
+                for key, value in properties.items():
+                    if hasattr(value, "isoformat"):
+                        properties[key] = value.isoformat()
 
                 if elem["geometry"].type == "MultiLineString":
                     # Remove single-point LineStrings
@@ -108,15 +126,19 @@ else:
 
                 elif elem["geometry"].type == "LineString":
                     if len(elem["geometry"].coordinates) >= 2:
+                        elem["properties"] = properties
                         output.write(elem)
 
-# Load shapefile into GeoDataFrame
 
+# Load shapefile into GeoDataFrame
 gdf = gpd.read_file(shp_dir + "/" + shp_dir + ".shp")
 print(f"Loaded shape file ({len(gdf)} rows)!")
 
+# Multi-OS support
+description_col_name = "descriptio" if "descriptio" in gdf else "Descriptio"
+
 # Parse dates and add as column
-gdf["Date"] = gdf["Descriptio"].str.extract(r"date=(.*)")[
+gdf["Date"] = gdf[description_col_name].str.extract(r"date=(.*)")[
     0
 ]  # get the part after 'date='
 gdf["Date"] = pd.to_datetime(gdf["Date"], format="%d-%b-%Y %H:%M:%S")
@@ -140,6 +162,7 @@ gdf_agg = gdf.groupby(["Date", "Segment"], as_index=False).agg(
     {"geometry": lambda x: unary_union(x)}
 )
 
+
 # We've run into a lot of issues with MultiLineStrings in the backend
 # Let's connect all MultiLineStrings into SingleLineStrings
 def connect_multilinestring_by_latitude(geom):
@@ -149,7 +172,7 @@ def connect_multilinestring_by_latitude(geom):
     end of the northern line to the north end of the southern line.
     """
     # If it's not a MultiLineString or is empty, return it as-is.
-    if geom.geom_type != 'MultiLineString' or geom.is_empty:
+    if geom.geom_type != "MultiLineString" or geom.is_empty:
         return geom
 
     lines = [line for line in geom.geoms if not line.is_empty and len(line.coords) > 1]
@@ -179,25 +202,28 @@ def connect_multilinestring_by_latitude(geom):
         # Orient the current line (coords1) so its southernmost point is at the end.
         # If the starting point's latitude is less than the ending point's, it's the southern point.
         if coords1[0][1] < coords1[-1][1]:
-            coords1.reverse() # Reverse so the southern point is the last element
+            coords1.reverse()  # Reverse so the southern point is the last element
 
         # Orient the next line (coords2) so its northernmost point is at the beginning.
         # If the ending point's latitude is greater than the starting point's, it's the northern point.
         if coords2[-1][1] > coords2[0][1]:
-            coords2.reverse() # Reverse so the northern point is the first element
+            coords2.reverse()  # Reverse so the northern point is the first element
 
         # Combine the coordinate lists and create the new, longer LineString
         connected_line = LineString(coords1 + coords2)
-        
+
     return connected_line
+
 
 # Apply the function
 print("Connecting MultiLineString geometries...")
 tqdm.pandas(desc="Connecting lines")
-gdf_agg['geometry'] = gdf_agg['geometry'].progress_apply(connect_multilinestring_by_latitude)
+gdf_agg["geometry"] = gdf_agg["geometry"].progress_apply(
+    connect_multilinestring_by_latitude
+)
 
 # Drop any rows with empty geometries after processing
-gdf_agg.dropna(subset=['geometry'], inplace=True)
+gdf_agg.dropna(subset=["geometry"], inplace=True)
 
 print("Forward filling...")
 
