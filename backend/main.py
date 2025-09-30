@@ -8,11 +8,9 @@ from flask_cors import CORS
 
 from coastline_mgr import CoastlineMgr
 
+coastline_mgr = CoastlineMgr()
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
-
-# Global CoastlineMgr instance
-coastline_mgr = None
 
 
 @app.route("/")
@@ -78,10 +76,5 @@ def instance():
 
 
 if __name__ == "__main__":
-    # Initialize function - equivalent to Lambda cold start
-    print("Starting application initialization...")
-
-    coastline_mgr = CoastlineMgr()
-
     print("Application ready to serve requests")
     app.run(debug=False, host="0.0.0.0", port=5001)
