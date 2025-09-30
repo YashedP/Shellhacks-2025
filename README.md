@@ -129,9 +129,9 @@ Above the map you can find a few buttons that have different functionalities, as
 <!-- CONTACT -->
 ### Contact
 
-Yash Jani - [![LinkedIn][linkedin-shield]][linkedin-url-yash] - yashjani144@gmail.com
-
 Joshua Sheldon - [![LinkedIn][linkedin-shield]][linkedin-url-yash] - admin@joshuasheldon.me
+
+Yash Jani - [![LinkedIn][linkedin-shield]][linkedin-url-yash] - yashjani144@gmail.com
 
 Khurram Valiyev- [![LinkedIn][linkedin-shield]][linkedin-url-yash] - khurram@valiyev.tech
 
