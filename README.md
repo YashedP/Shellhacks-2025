@@ -125,3 +125,20 @@ You can also zoom into the map to see a better view of an area, not all the data
 
 Above the map you can find a few buttons that have different functionalities, as well as seeing what the current year for the map is.
 <img src="viz/topUI.png" width="560">
+
+<!-- CONTACT -->
+### Contact
+
+Yash Jani - [![LinkedIn][linkedin-shield]][linkedin-url-yash] - yashjani144@gmail.com
+
+Joshua Sheldon - [![LinkedIn][linkedin-shield]][linkedin-url-yash] - yashjani144@gmail.com
+
+Khurram Valiyev- [![LinkedIn][linkedin-shield]][linkedin-url-yash] - yashjani144@gmail.com
+
+Evan Gunderson - [![LinkedIn][linkedin-shield]][linkedin-url-yash] - yashjani144@gmail.com
+
+[linkedin-shield]: https://img.shields.io/badge/-LinkedIn-0A66C2.svg?style=for-the-badge&logo=linkedin&logoColor=white
+[linkedin-url-yash]: https://linkedin.com/in/yash-jani-8245bb26a/
+[linkedin-url-yash]: https://linkedin.com/in/yash-jani-8245bb26a/
+[linkedin-url-yash]: https://linkedin.com/in/yash-jani-8245bb26a/
+[linkedin-url-yash]: https://linkedin.com/in/yash-jani-8245bb26a/
