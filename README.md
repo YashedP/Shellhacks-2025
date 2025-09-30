@@ -75,7 +75,7 @@ Such are the quandaries of working with real data.
 ### [Transformer](transformer/)
 
 The model is a transformer encoder, it has 8 attention heads and 8 layers. it encorperated weight decay at 0.01 and dropout at 0.11. it was trained for 18 epochs with a learning rate of 0.0003 using MSE as its loss function. The feed forward dimensionalaity is 512.
-<img width="1187" height="1741" alt="image" src="https://github.com/user-attachments/assets/2ab53aac-b127-4fef-9286-9fa8e4fe5df7" />
+<img width="600" height="900" alt="image" src="https://github.com/user-attachments/assets/2ab53aac-b127-4fef-9286-9fa8e4fe5df7" />
 *architecture of a transformer*
 To train the transformer first the data is resampled to an adjustable interval, with the deployed model resampled to 30 day steps, then the data is windowed at a 12 step (approx yearly) window and the data is normalized and deltas for latitude and longitude are computed. 
 The model uses positional encoding for time series. The model's architecture is flexible, allowing hyperparameters like the number of layers, model dimensions, and attention heads to be customized using arguments without modifying the program directly.
