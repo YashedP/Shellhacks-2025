@@ -117,3 +117,11 @@ It's critical to note that this approach was heavily inspired by [Stripe](https:
 ### [Frontend](web/)
 
 *Coming soon...*
+The frontend works by rendering a map using a Leaflet map UI and then drawing over the map with the data points in blue color (disabled by default) and the connecting them with a red line to display the coastline for the current year. 
+<img src="viz/map.png" width="560">
+
+You can also zoom into the map to see a better view of an area, not all the data is being loaded at the same time, so when you zoom in a bounding box works to only display the data that is needed for the specific region that you are looking at.
+![](viz/zoom.gif)
+
+Above the map you can find a few buttons that have different functionalities, as well as seeing what the current year for the map is.
+<img src="viz/topUI.png" width="560">
