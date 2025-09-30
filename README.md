@@ -33,7 +33,7 @@ Move the `etl_pipeline/segment_gdfs` directory to the `backend/data` directory, 
 Navigate to the [`backend`](backend/) directory and start the backend with the following command:
 
 ```
-uv run src/main.py
+uv run main.py
 ```
 
 This should start up the backend on port 5001.
