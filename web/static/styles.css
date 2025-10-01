@@ -7,9 +7,13 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     min-height: 100vh;
     color: #333;
+
+    /* Background image with subtle overlay for readability */
+    background:
+        linear-gradient(180deg, rgba(0,0,0,0.35), rgba(0,0,0,0.35)),
+        url("/static/bg2.jpg") center/cover no-repeat fixed;
 }
 
 .container {
@@ -350,4 +354,52 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
     background: #555;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    color: white;
+    margin-top: 12px;
+}
+.footer .repo { margin-bottom: 14px; }
+
+.footer .team-label {
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.footer .team-list {
+    list-style: none;
+    list-style-type: none;
+    padding-left: 0;
+    margin: 0;
+}
+.footer .team-list li {
+    list-style: none;
+    list-style-type: none;
+    margin: 3px 0;
+}
+.footer .team-list li::marker { content: none; } /* ensure no bullets in all engines */
+
+.footer a {
+    color: white;
+    text-decoration: none;
+}
+.footer a:hover { text-decoration: underline; }
+
+/* Highlight styles */
+.footer .repo a {
+    display: inline-block;
+    background: rgba(0,0,0,0.25);
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-weight: 700;
+}
+.footer .team-list a {
+    display: inline-block;
+    background: rgba(0,0,0,0.18);
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-weight: 600;
 }

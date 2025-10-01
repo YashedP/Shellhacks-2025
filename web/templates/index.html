@@ -34,16 +34,11 @@
                     <span class="label">Data Points:</span>
                     <span id="data-count" class="value">0</span>
                 </div>
-                <div class="info-item">
-                    <span class="label">View Area:</span>
-                    <span id="view-area" class="value">Global</span>
-                </div>
             </div>
 
             <div class="map-controls">
                 <button id="reset-zoom" class="btn">Reset View</button>
                 <button id="animate-btn" class="btn">Animate</button>
-                <button id="toggle-contours" class="btn active">Show Contours</button>
                 <button id="toggle-points" class="btn">Show Points</button>
             </div>
         </div>
@@ -55,6 +50,19 @@
                 <p>Loading data...</p>
             </div>
         </div>
+
+        <footer class="footer">
+            <p class="repo">
+                <a href="https://github.com/YashedP/Shellhacks-2025" target="_blank" rel="noopener noreferrer">GitHub Repo</a>
+            </p>
+            <p class="team-label">Team</p>
+            <ul class="team-list">
+                <li><a href="https://www.linkedin.com/in/joshuaesheldon/" target="_blank" rel="noopener noreferrer">Joshua Sheldon</a></li>
+                <li><a href="https://www.linkedin.com/in/yash-jani-8245bb26a/" target="_blank" rel="noopener noreferrer">Yash Jani</a></li>
+                <li><a href="https://www.linkedin.com/in/khurram-valiyev/" target="_blank" rel="noopener noreferrer">Khurram Valiyev</a></li>
+                <li><a href="https://www.linkedin.com/in/egunderson2004/" target="_blank" rel="noopener noreferrer">Evan Gunderson</a></li>
+            </ul>
+        </footer>
 
     </div>
 
@@ -119,22 +127,8 @@
                 bounds.getEast() // max longitude
             ];
             
-            // Update view area display
-            const area = calculateArea(currentBounds);
-            document.getElementById('view-area').textContent = 
-                area > 1000000 ? 'Global' : 
-                area > 100000 ? 'Regional' : 'Local';
-            
-            // Reload data with new bounds - this will update year and data type
+            // Reload data with new bounds
             loadDataForYear(currentYear);
-        }
-
-        // Calculate approximate area of current view
-        function calculateArea(bounds) {
-            const [minLat, minLon, maxLat, maxLon] = bounds;
-            const latDiff = maxLat - minLat;
-            const lonDiff = maxLon - minLon;
-            return latDiff * lonDiff;
         }
 
         // Load data for specific year
@@ -304,21 +298,11 @@
 
         // Update button colors based on active state
         function updateButtonColors() {
-            const contoursBtn = document.getElementById('toggle-contours');
             const pointsBtn = document.getElementById('toggle-points');
             
-            // Remove all color classes
-            contoursBtn.classList.remove('active', 'both-active');
-            pointsBtn.classList.remove('active', 'both-active');
-            
-            if (showContours && showPoints) {
-                // Both active - green
-                contoursBtn.classList.add('both-active');
-                pointsBtn.classList.add('both-active');
-            } else if (showContours || showPoints) {
-                // One active - red
-                if (showContours) contoursBtn.classList.add('active');
-                if (showPoints) pointsBtn.classList.add('active');
+            pointsBtn.classList.remove('active');
+            if (showPoints) {
+                pointsBtn.classList.add('active');
             }
         }
 
@@ -417,15 +401,7 @@
             toggleAnimation();
         });
 
-        document.getElementById('toggle-contours').addEventListener('click', function() {
-            showContours = !showContours;
-            this.classList.toggle('active');
-            updateButtonColors();
-            // Refresh display with current data
-            if (currentData) {
-                displayData(currentData);
-            }
-        });
+        // contours are always enabled; no toggle handler
 
         document.getElementById('toggle-points').addEventListener('click', function() {
             showPoints = !showPoints;
