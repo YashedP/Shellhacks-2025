@@ -25,32 +25,30 @@ class CoastlineMgr:
         for child_node in node.children:
             self._populate_depth(child_node, depth + 1)
 
+    def _process_coastlines(
+        self, description: str, coastlines: Dict[datetime, Dict[int, LineString]]
+    ):
+        for timestamp, segments in tqdm(coastlines.items(), desc=description):
+            root = CoastlineTreeNode(segments)
+            self._populate_depth(root, 0)
+            self.coastlines[timestamp] = (root, segments)
+
     def __init__(self):
         self.coastlines: Dict[
             datetime, Tuple[CoastlineTreeNode, Dict[int, LineString]]
         ] = {}
 
         historical_coastlines = ingest_historical_data()
-
-        for timestamp, segments in tqdm(
-            historical_coastlines.items(), desc="Processing historical coastlines"
-        ):
-            root = CoastlineTreeNode(segments)
-            self._populate_depth(root, 0)
-            self.coastlines[timestamp] = (root, segments)
+        self._process_coastlines(
+            "Processing historical coastlines", historical_coastlines
+        )
 
         latest_timestamp = max(self.coastlines.keys())
 
         future_coastlines = ingest_future_data(
             latest_timestamp, self.coastlines[latest_timestamp][1]
         )
-
-        for timestamp, segments in tqdm(
-            future_coastlines.items(), "Processing future coastlines"
-        ):
-            root = CoastlineTreeNode(segments)
-            self._populate_depth(root, 0)
-            self.coastlines[timestamp] = (root, segments)
+        self._process_coastlines("Processing future coastlines", future_coastlines)
 
         self.sorted_timestamps = sorted(list(self.coastlines.keys()))
 
