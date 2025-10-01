@@ -132,16 +132,16 @@ Above the map you can find a few buttons that have different functionalities, as
 <!-- CONTACT -->
 ### Contact
 
-Joshua Sheldon - [![LinkedIn][linkedin-shield]][linkedin-url-yash] - admin@joshuasheldon.me
+Joshua Sheldon - [![LinkedIn][linkedin-shield]][linkedin-url-joshua] - admin@joshuasheldon.me
 
 Yash Jani - [![LinkedIn][linkedin-shield]][linkedin-url-yash] - yashjani144@gmail.com
 
-Khurram Valiyev - [![LinkedIn][linkedin-shield]][linkedin-url-yash] - khurram@valiyev.tech
+Khurram Valiyev - [![LinkedIn][linkedin-shield]][linkedin-url-khurram] - khurram@valiyev.tech
 
-Evan Gunderson - [![LinkedIn][linkedin-shield]][linkedin-url-yash] - yashjani144@gmail.com
+Evan Gunderson - [![LinkedIn][linkedin-shield]][linkedin-url-evan] - yashjani144@gmail.com
 
 [linkedin-shield]: https://img.shields.io/badge/-LinkedIn-0A66C2.svg?style=for-the-badge&logo=linkedin&logoColor=white
 [linkedin-url-yash]: https://linkedin.com/in/yash-jani-8245bb26a/
-[linkedin-url-yash]: https://www.linkedin.com/in/joshua-sheldon-6839aa1b2/
+[linkedin-url-joshua]: https://www.linkedin.com/in/joshua-sheldon-6839aa1b2/
 [linkedin-url-khurram]: https://www.linkedin.com/in/khurram-valiyev/
 [linkedin-url-evan]: https://www.linkedin.com/in/egunderson2004/
