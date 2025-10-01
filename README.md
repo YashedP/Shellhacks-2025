@@ -2,7 +2,7 @@
 
 Receding Coastlines allows you to visualize what Florida's eastern coast has looked like from 1984 to now, and what our transformer model predicts it will look like in the decades to come.
 
-[Watch the demo!](https://youtu.be/YqlmWCwJer4?si=r1VoGgXS7s5L_Y5l)
+[Use it now](https://recedingcoastlin.es/) or [watch the demo](https://youtu.be/YqlmWCwJer4?si=r1VoGgXS7s5L_Y5l)!
 
 <img src="viz/ui.png" width="560">
 
