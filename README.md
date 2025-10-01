@@ -50,7 +50,7 @@ This should start up the frontend on port 5000.
 
 **NOTE:** If you are running Receding Coastlines on macOS, the AirPlay Receiver may be running on port 5000. You can find instructions to disable it [here](https://discussions.apple.com/thread/254343678?answerId=258145653022).
 
-### ~Fin~
+### Finish!
 
 Assuming all goes well, you should be able to navigate to [`http://localhost:5000`](http://localhost:5000) and see Receding Coastlines running:
 
@@ -60,7 +60,7 @@ Assuming all goes well, you should be able to navigate to [`http://localhost:500
 
 ### [ETL Pipeline](etl_pipeline/etl.py)
 
-*Author: [Joshua Sheldon](https://www.linkedin.com/in/joshua-sheldon-6839aa1b2/)*
+*Author: [Joshua Sheldon](#contact)*
 
 For our purposes, each entry in the historical data consists of two primary attributes: (1) a timestamp and (2) one or more lines, with vertices expressed in latitude and longitude, describing the shape of a section of Florida's coastline. However, while the data does have numbered sections, to the best of my knowledge, the data does not conform to consistent sections of the coastline. While it's possible there was an underlying pattern, I opted to not expend much time beyond initial checks in trying to find it. Rather, I implemented a segmentation scheme on top of the data.
 
@@ -73,6 +73,8 @@ For each timestamp in the dataset, I assemble one full coastline. The full coast
 Such are the quandaries of working with real data.
 
 ### [Transformer](transformer/)
+
+*Author: [Evan Gunderson](#contact)*
 
 The model is a transformer encoder, it has 8 attention heads and 8 layers. it encorperated weight decay at 0.01 and dropout at 0.11. it was trained for 18 epochs with a learning rate of 0.0003 using MSE as its loss function. The feed forward dimensionality is 512.
 
@@ -88,7 +90,7 @@ The script supports both normalized loss and loss measured in real-world units (
 
 ### [Backend](backend/)
 
-*Author: [Joshua Sheldon](https://www.linkedin.com/in/joshua-sheldon-6839aa1b2/)*
+*Author: [Joshua Sheldon](#contact)*
 
 Our data has a relatively high spatial and temporal fidelity. Our final, transformed historical data consists of 4,663 timestamps, and each full coastline has tens of thousands of vertices. Therefore, if the frontend was to be at all responsive, I had to be clever in the way I served the data to it.
 
@@ -116,7 +118,8 @@ It's critical to note that this approach was heavily inspired by [Stripe](https:
 
 ### [Frontend](web/)
 
-*Coming soon...*
+*Author: [Khurram Valiyev](#contact)*
+
 The frontend works by rendering a map using a Leaflet map UI and then drawing over the map with the data points in blue color (disabled by default) and the connecting them with a red line to display the coastline for the current year. 
 <img src="viz/map.png" width="560">
 
@@ -133,7 +136,7 @@ Joshua Sheldon - [![LinkedIn][linkedin-shield]][linkedin-url-yash] - admin@joshu
 
 Yash Jani - [![LinkedIn][linkedin-shield]][linkedin-url-yash] - yashjani144@gmail.com
 
-Khurram Valiyev- [![LinkedIn][linkedin-shield]][linkedin-url-yash] - khurram@valiyev.tech
+Khurram Valiyev - [![LinkedIn][linkedin-shield]][linkedin-url-yash] - khurram@valiyev.tech
 
 Evan Gunderson - [![LinkedIn][linkedin-shield]][linkedin-url-yash] - yashjani144@gmail.com
 
